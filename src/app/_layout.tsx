@@ -1,18 +1,57 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useUnistyles } from 'react-native-unistyles';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  useFonts,
+} from '@expo-google-fonts/plus-jakarta-sans';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-SplashScreen.preventAutoHideAsync();
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
+  const { theme } = useUnistyles();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    if (loaded) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded]);
+
+  if (!loaded) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.colors.background },
+            // Native iOS push/pop with interactive swipe-back; explicit duration keeps Android in step.
+            animation: 'slide_from_right',
+            animationDuration: 320,
+            gestureEnabled: true,
+            fullScreenGestureEnabled: true,
+          }}
+        >
+          <Stack.Screen name="index" options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="onboarding" options={{ animation: 'fade', animationDuration: 400, gestureEnabled: false }} />
+          <Stack.Screen name="(auth)" options={{ animation: 'fade', animationDuration: 400 }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 400, gestureEnabled: false }} />
+          <Stack.Screen name="scan" options={{ animation: 'fade', animationDuration: 250 }} />
+          <Stack.Screen name="success" options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
+          <Stack.Screen name="select-contact" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="country-code" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        </Stack>
+    </GestureHandlerRootView>
   );
 }

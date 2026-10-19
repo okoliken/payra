@@ -1,56 +1,49 @@
-# Welcome to your Expo app 👋
+# Payra
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A portfolio demo of the **Payra e-wallet** Figma design, built with Expo and styled entirely with
+[react-native-unistyles](https://www.unistyl.es) v3.
 
-## Get started
+- **Expo SDK 57** · expo-router (file-based navigation) · TypeScript · React Compiler
+- **Unistyles 3** for theming: every `StyleSheet.create((theme, rt) => …)` reacts to theme and
+  safe-area changes on the native side. Light theme is 1:1 with the Figma style guide; dark theme is
+  an added extra (toggle it in Profile → General Settings).
+- Plus Jakarta Sans via `@expo-google-fonts`, icons from `lucide-react-native`.
+- All data is mocked in `src/data/mock.ts`; app state is a Zustand store persisted to AsyncStorage
+  (`src/store/app-store.ts`) — read it with selectors. Nothing touches a network.
 
-1. Install dependencies
+## Run it
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Unistyles ships native code, so **Expo Go won't work** — build a dev client once:
 
 ```bash
-npm run reset-project
+npm install
+npm run ios        # expo run:ios (needs Xcode) – first run does prebuild + pod install
+npm start          # later: Metro only, press i
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Metro is pinned to port 8085 in `package.json` because 8081 is often taken on this machine.
 
-### Other setup steps
+## Structure
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+index.ts                 entry: expo-router/entry, then src/unistyles (must run before any StyleSheet)
+src/unistyles.ts         StyleSheet.configure – themes + breakpoints + TS augmentation
+src/theme/tokens.ts      colours, type scale, spacing, radius lifted from Figma
+src/components/ui/       AppText, Button, Input, Card, Screen, Header, ListRow, Segmented, …
+src/components/          tab-bar (floating pill), bank-card, transaction-row, amount-entry
+src/app/                 routes
+  index.tsx              launch → onboarding / sign-in / tabs
+  onboarding.tsx
+  (auth)/                getting-started → verify → personal-info → pin, sign-in, forgot-password
+  (tabs)/                home, wallet, history, profile
+  transfer, select-contact, send-amount, request, request-amount, top-up
+  bills/[type]           electricity (prepaid/bills/services), water, internet, more
+  notifications, points, promo, add-wallet, edit-profile, account-security, settings, success
+```
 
-## Learn more
+## Flows to click through
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Onboarding → Getting Started (phone) → OTP → Personal Info → PIN (any 6 digits) → Home.
+2. Home → Transfer → pick a contact → keypad → Success (balance + history update).
+3. Home → Electricity → Prepaid → choose a token → Buy.
+4. Profile → General Settings → Dark Theme switch.
