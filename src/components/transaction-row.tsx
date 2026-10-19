@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { AppText } from '@/components/ui';
+import { AppText, IconCircle } from '@/components/ui';
 import { AppIcon, type IconName } from '@/components/app-icon';
 import type { Transaction } from '@/data/mock';
 import { timeLabel } from '@/lib/format';
@@ -15,7 +15,7 @@ const iconFor: Record<Transaction['kind'], IconName> = {
 
 /**
  * Figma transaction card (History / Home): 370×84, padding 18, r18, Background/B1;
- * 48pt Background/B0 circle with a 24pt Solar icon in Brand/Secondary, gap 12;
+ * IconCircle (48/40) with a 24pt Solar icon in Text/Primary, gap 12; text columns gap 6;
  * title Body SemiBold, status Caption Text/Tertiary; amount Body SemiBold in Green/Default or
  * Red/Default (no sign, as designed), meta "Category · HH:MM" Caption Text/Tertiary.
  */
@@ -25,9 +25,9 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const amount = `$${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
     <View style={styles.card}>
-      <View style={styles.icon}>
-        <AppIcon name={iconFor[tx.kind]} size={24} color={theme.colors.brandDark} />
-      </View>
+      <IconCircle>
+        <AppIcon name={iconFor[tx.kind]} size={24} color={theme.colors.text} />
+      </IconCircle>
       <View style={styles.body}>
         <AppText variant="body" weight="semiBold" numberOfLines={1}>
           {tx.title}
@@ -57,7 +57,6 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: 18,
     backgroundColor: theme.colors.surfaceRaised,
   },
-  icon: { width: 48, height: 48, borderRadius: 24, backgroundColor: theme.colors.background, alignItems: 'center', justifyContent: 'center' },
-  body: { flex: 1, gap: 2 },
-  right: { alignItems: 'flex-end', gap: 2 },
+  body: { flex: 1, gap: 6 },
+  right: { alignItems: 'flex-end', gap: 6 },
 }));

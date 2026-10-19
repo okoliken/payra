@@ -1,6 +1,5 @@
 export { AppText } from './text';
 export { Button } from './button';
-export { Input } from './input';
 export { Card } from './card';
 export { Screen } from './screen';
 export { IconButton } from './icon-button';
@@ -8,7 +7,6 @@ export { Header } from './header';
 export { ListRow } from './list-row';
 export { Segmented } from './segmented';
 export { Avatar } from './avatar';
-export { OtpInput } from './otp-input';
 export { Logo } from './logo';
-export { BottomSheet } from './bottom-sheet';
 export { SearchBar } from './search-bar';
+export { IconCircle } from './icon-circle';

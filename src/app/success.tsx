@@ -1,44 +1,54 @@
-import { View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { useGuardedRouter } from '@/lib/navigation';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { Check } from 'lucide-react-native';
-import { AppText, Button, Screen } from '@/components/ui';
+import { useEffect } from "react";
+import { View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import Animated, { Easing, FadeInDown, ZoomIn } from "react-native-reanimated";
+import { StyleSheet } from "react-native-unistyles";
+import * as Haptics from "expo-haptics";
+import { AppText, Button, Screen } from "@/components/ui";
+import { useGuardedRouter } from "@/lib/navigation";
+
+const EASE = Easing.out(Easing.cubic);
 
 /**
- * Figma "Password Changed!" / "PIN Changed!" (402×874): centred illustration, H4 title,
- * Body secondary copy, Primary "OK" button at y=760. No nav bar.
- * TODO(figma-assets): swap the placeholder art for the exported illustration PNG.
+ * Figma "Password Changed!" (348:1931) layout and illustration, reused for the transfer result:
+ * 310×200 art, 32 above an H4 title and Body copy, Primary "OK" 32 above the home indicator.
+ * The art springs in, then the copy rises after it.
  */
 export default function SuccessScreen() {
   const router = useGuardedRouter();
-  const { theme } = useUnistyles();
-  const { title = 'Success!', body = '', next } = useLocalSearchParams<{ title?: string; body?: string; next?: string }>();
+  const { amount, name } = useLocalSearchParams<{ amount: string; name: string }>();
+
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }, []);
+
   return (
     <Screen>
       <View style={styles.center}>
-        <View style={styles.art}>
-          <View style={styles.check}>
-            <Check size={44} color={theme.colors.brand} strokeWidth={3.5} />
-          </View>
-        </View>
-        <View style={styles.copy}>
+        <Animated.Image
+          entering={ZoomIn.springify().damping(13).stiffness(140).delay(80)}
+          source={require("@/../assets/images/success-art.png")}
+          style={styles.art}
+        />
+        <Animated.View entering={FadeInDown.delay(280).duration(420).easing(EASE)} style={styles.copy}>
           <AppText variant="h4" weight="semiBold" align="center">
-            {title}
+            Transfer Successful!
           </AppText>
           <AppText variant="body" tone="secondary" align="center">
-            {body}
+            You sent ${amount} to {name}
           </AppText>
-        </View>
+        </Animated.View>
       </View>
-      <Button title="OK" onPress={() => (next ? router.replace(next as never) : router.dismissAll?.() ?? router.replace('/(tabs)'))} />
+      <Animated.View entering={FadeInDown.delay(420).duration(420).easing(EASE)} style={styles.cta}>
+        <Button title="OK" onPress={() => router.dismissTo("/(tabs)")} />
+      </Animated.View>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  art: { width: 200, height: 160, borderRadius: 80, backgroundColor: theme.colors.brand, alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing.xxl },
-  check: { width: 96, height: 96, borderRadius: 24, backgroundColor: theme.colors.brandDark, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
-  copy: { gap: theme.spacing.sm, maxWidth: 300 },
-}));
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 32 },
+  art: { width: 310, height: 200 },
+  cta: { marginBottom: 16 },
+  copy: { gap: 8, alignSelf: "stretch" },
+});

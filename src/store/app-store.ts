@@ -69,7 +69,8 @@ export const useStore = create<AppState & AppActions>()(
 
       completeOnboarding: () => set({ onboarded: true }),
       signIn: () => set({ signedIn: true, onboarded: true }),
-      signOut: () => set({ signedIn: false }),
+      // Demo app: logging out starts the whole demo over from onboarding with fresh data.
+      signOut: () => set(initialState),
       toggleBalance: () => set((s) => ({ hideBalance: !s.hideBalance })),
 
       addTransaction: (tx) => {
@@ -114,10 +115,10 @@ export const useStore = create<AppState & AppActions>()(
       name: "payra-store",
       storage: createJSONStorage(() => AsyncStorage),
       // Bump when persisted mock data changes shape/order; migrate resets that slice only.
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Partial<AppState>;
-        return version < 2 ? { ...state, cards: mock.cards } : state;
+        return version < 3 ? { ...state, balance: initialState.balance, transactions: mock.transactions, cards: mock.cards } : state;
       },
       // Persist durable state only; derived/UI bits are recomputed.
       partialize: (s) => ({

@@ -4,11 +4,12 @@ import { StyleSheet } from 'react-native-unistyles';
 import { Logo, Screen } from '@/components/ui';
 import { useGuardedRouter } from '@/lib/navigation';
 import { useStore } from '@/store/app-store';
+import { DEV_ROUTE } from '@/dev-route';
 
 /** Launch screen: yellow brand background, then route to onboarding / auth / app. */
 export default function LaunchScreen() {
   const router = useGuardedRouter();
-  const { onboarded, signedIn } = useStore();
+  const signedIn = useStore((s) => s.signedIn);
   const [hydrated, setHydrated] = useState(useStore.persist.hasHydrated());
 
   // The persisted store loads from AsyncStorage asynchronously; don't route on stale defaults.
@@ -23,13 +24,14 @@ export default function LaunchScreen() {
   useEffect(() => {
     if (!hydrated) return;
     const timer = setTimeout(() => {
-      if (__DEV__ && process.env.EXPO_PUBLIC_START_ROUTE) return router.replace(process.env.EXPO_PUBLIC_START_ROUTE as never);
-      if (signedIn) router.replace('/(tabs)');
-      else if (onboarded) router.replace('/(auth)/sign-in');
-      else router.replace('/onboarding');
+      if (__DEV__ && DEV_ROUTE) {
+        useStore.getState().signIn();
+        return router.replace(DEV_ROUTE as never);
+      }
+      router.replace(signedIn ? '/(tabs)' : '/onboarding');
     }, 1100);
     return () => clearTimeout(timer);
-  }, [hydrated, onboarded, signedIn, router]);
+  }, [hydrated, signedIn, router]);
 
   return (
     <Screen tone="brand" style={styles.center}>

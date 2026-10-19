@@ -1,3 +1,10 @@
+/** formatMoney for the UI thread (animated values): "$15,500.00". */
+export function formatMoneyWorklet(amount: number) {
+  "worklet";
+  const [whole, cents] = Math.abs(amount).toFixed(2).split(".");
+  return `${amount < 0 ? "-" : ""}$${whole!.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${cents}`;
+}
+
 export const formatMoney = (amount: number, opts: { sign?: boolean } = {}) => {
   const abs = Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const sign = opts.sign ? (amount < 0 ? '- ' : '+ ') : amount < 0 ? '-' : '';

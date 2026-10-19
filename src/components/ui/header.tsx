@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useGuardedRouter } from '@/lib/navigation';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { ChevronLeft } from 'lucide-react-native';
+import { AppIcon } from '@/components/app-icon';
 import { AppText } from './text';
 import { IconButton } from './icon-button';
 
@@ -26,14 +26,14 @@ export function Header({ title, center, right, onBack, showBack = true, onDark =
       <View style={styles.slot}>
         {showBack ? (
           <IconButton tone={onDark ? 'onDark' : 'surface'} size="lg" onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/(tabs)')))}>
-            <ChevronLeft size={20} color={iconColor} />
+            <AppIcon name="alt-arrow-left" size={20} color={iconColor} />
           </IconButton>
         ) : null}
       </View>
       {center ? (
         <View style={[styles.title, styles.center]}>{center}</View>
       ) : title ? (
-        <AppText variant="body" weight="semiBold" tone={onDark ? 'onDark' : 'primary'} align="center" style={styles.title} numberOfLines={1}>
+        <AppText variant="bodyL" weight="semiBold" tone={onDark ? 'onDark' : 'primary'} align="center" style={styles.title} numberOfLines={1}>
           {title}
         </AppText>
       ) : (

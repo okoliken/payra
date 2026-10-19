@@ -1,47 +1,38 @@
 import { Pressable, View } from "react-native";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import { AppText, Header, IconButton, Screen } from "@/components/ui";
+import { AppText, Header, IconButton, IconCircle, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
 import { CardStack } from "@/components/card-stack";
-import { useGuardedRouter } from "@/lib/navigation";
+import * as Haptics from "expo-haptics";
 import { useStore } from "@/store/app-store";
 
 /**
  * Figma "My Wallet" (402×874): nav 64 (title + 48pt `add` icon button) → 24 → card stack
  * (Mastercard strip 62pt above the Visa card, both 363.33×200 r24) → 32 → "Manage Wallet"
  * Body Large SemiBold → 16 → rows 370×84 (padding 18, gap 12, r18, B1) at gap 16, each with a
- * 40pt icon circle, Body SemiBold label and `alt-arrow-right` chevron.
+ * 48pt IconCircle, Body SemiBold label and `alt-arrow-right` chevron.
  */
-const rows: { key: string; label: string; icon: IconName; href: string }[] = [
+const rows: { key: string; label: string; icon: IconName }[] = [
   {
     key: "manage",
     label: "Manage Payment Method",
-    icon: "settings",
-    href: "/add-wallet",
-  },
+    icon: "settings" },
   {
     key: "show-pin",
     label: "Show PIN",
-    icon: "eye",
-    href: "/account-security",
-  },
+    icon: "eye" },
   {
     key: "unlock-pin",
     label: "Unlock PIN",
-    icon: "lock",
-    href: "/account-security",
-  },
-  { key: "replace", label: "Replace Card", icon: "card", href: "/add-wallet" },
+    icon: "lock" },
+  { key: "replace", label: "Replace Card", icon: "card" },
   {
     key: "limit",
     label: "Card Limit",
-    icon: "history",
-    href: "/account-security",
-  },
+    icon: "history" },
 ];
 
 export default function WalletScreen() {
-  const router = useGuardedRouter();
   const { theme } = useUnistyles();
   const { cards } = useStore();
 
@@ -51,7 +42,7 @@ export default function WalletScreen() {
         title="My Wallet"
         showBack={false}
         right={
-          <IconButton size="lg" onPress={() => router.push("/add-wallet")}>
+          <IconButton size="lg" onPress={() => Haptics.selectionAsync().catch(() => {})}>
             <AppIcon name="add" size={24} color={theme.colors.brandDark} />
           </IconButton>
         }
@@ -66,25 +57,17 @@ export default function WalletScreen() {
         {rows.map((row) => (
           <Pressable
             key={row.key}
-            onPress={() => router.push(row.href as never)}
+            onPress={() => Haptics.selectionAsync().catch(() => {})}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             accessibilityRole="button"
           >
-            <View style={styles.rowIcon}>
-              <AppIcon
-                name={row.icon}
-                size={24}
-                color={theme.colors.brandDark}
-              />
-            </View>
+            <IconCircle>
+              <AppIcon name={row.icon} size={24} color={theme.colors.text} />
+            </IconCircle>
             <AppText variant="body" weight="semiBold" style={styles.rowLabel}>
               {row.label}
             </AppText>
-            <AppIcon
-              name="alt-arrow-right"
-              size={24}
-              color={theme.colors.brandDark}
-            />
+            <AppIcon name="alt-arrow-right" size={24} color={theme.colors.text} />
           </Pressable>
         ))}
       </View>
@@ -108,15 +91,5 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surfaceRaised,
   },
   rowPressed: { opacity: 0.8 },
-  rowIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 25,
-    backgroundColor: theme.colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: theme.colors.stroke.soft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   rowLabel: { flex: 1 },
 }));

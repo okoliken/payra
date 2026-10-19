@@ -43,6 +43,11 @@ export type Promo = {
 };
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
+const todayAt = (hour: number, minute: number) => {
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
+};
 const daysAgo = (d: number, hour = 9) => {
   const date = new Date();
   date.setDate(date.getDate() - d);
@@ -61,9 +66,10 @@ export const user = {
 };
 
 export const transactions: Transaction[] = [
-  { id: 't1', title: 'Mobile Money Top-up', kind: 'topup', amount: 50, status: 'Completed', category: 'GoPay', at: hoursAgo(2) },
-  { id: 't2', title: 'Netflix Payment', kind: 'subscription', amount: -10, status: 'Completed', category: 'Subscriptions', at: hoursAgo(5) },
-  { id: 't3', title: 'Transfer', kind: 'sent', amount: -150, status: 'Completed', category: 'Aaliyah Putri', at: daysAgo(1, 14) },
+  // The first two match the Figma Home frame's "Recent Transaction" cards.
+  { id: 't1', title: 'Transfer', kind: 'sent', amount: -150, status: 'Completed', category: 'BCA****0190', at: todayAt(19, 19) },
+  { id: 't2', title: 'Mobile Money Top-up', kind: 'topup', amount: 150, status: 'Completed', category: 'GoPay', at: todayAt(11, 20) },
+  { id: 't3', title: 'Netflix Payment', kind: 'subscription', amount: -10, status: 'Completed', category: 'Subscriptions', at: daysAgo(1, 14) },
   { id: 't4', title: 'Spotify Payment', kind: 'subscription', amount: -15, status: 'Completed', category: 'Subscriptions', at: daysAgo(9, 9) },
   { id: 't5', title: 'Salary', kind: 'received', amount: 4200, status: 'Completed', category: 'Payroll', at: daysAgo(12, 8) },
   { id: 't6', title: 'Electricity Bill', kind: 'bill', amount: -64.52, status: 'Completed', category: 'Prepaid', at: daysAgo(20, 19) },

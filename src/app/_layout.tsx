@@ -45,12 +45,8 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="onboarding" options={{ animation: 'fade', animationDuration: 400, gestureEnabled: false }} />
-          <Stack.Screen name="(auth)" options={{ animation: 'fade', animationDuration: 400 }} />
           <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 400, gestureEnabled: false }} />
-          <Stack.Screen name="scan" options={{ animation: 'fade', animationDuration: 250 }} />
-          <Stack.Screen name="success" options={{ animation: 'fade_from_bottom', gestureEnabled: false }} />
-          <Stack.Screen name="select-contact" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="country-code" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="success" options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
         </Stack>
     </GestureHandlerRootView>
   );

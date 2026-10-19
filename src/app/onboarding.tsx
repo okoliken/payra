@@ -21,14 +21,15 @@ type Slide = (typeof slides)[number];
 
 export default function OnboardingScreen() {
   const router = useGuardedRouter();
-  const { completeOnboarding } = useStore();
+  const signIn = useStore((s) => s.signIn);
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<Slide>>(null);
   const [index, setIndex] = useState(0);
 
   const finish = () => {
-    completeOnboarding();
-    router.replace('/(auth)/getting-started');
+    // The demo skips sign-up: onboarding leads straight into the app.
+    signIn();
+    router.replace('/(tabs)');
   };
 
   const goTo = (i: number) => listRef.current?.scrollToIndex({ index: i, animated: true });

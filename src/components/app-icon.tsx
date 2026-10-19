@@ -20,7 +20,9 @@ import {
   QrCode,
   Nfc,
 } from "lucide-react-native";
+import { SvgXml } from "react-native-svg";
 import * as Solar from "@/components/icons/solar";
+import { figmaIcons, type FigmaIconName } from "@/components/icons/figma-icons";
 import type { IconProps } from "@/components/icons/solar";
 
 /**
@@ -93,7 +95,7 @@ const registry = {
   nfc: (p: IconProps) => <Nfc size={p.size} color={p.color} strokeWidth={1.5} />,
 } satisfies Record<string, (p: IconProps) => React.JSX.Element>;
 
-export type IconName = keyof typeof registry;
+export type IconName = keyof typeof registry | FigmaIconName;
 
 export function AppIcon({
   name,
@@ -104,6 +106,9 @@ export function AppIcon({
   size?: number;
   color: string;
 }) {
-  const Icon = registry[name];
+  if (name in figmaIcons) {
+    return <SvgXml xml={figmaIcons[name as FigmaIconName]} width={size} height={size} color={color} />;
+  }
+  const Icon = registry[name as keyof typeof registry];
   return <Icon size={size} color={color} />;
 }

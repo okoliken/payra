@@ -1,154 +1,178 @@
-import { View } from "react-native";
-import { useGuardedRouter } from "@/lib/navigation";
+import { Image, Pressable, View } from "react-native";
+import { SvgXml } from "react-native-svg";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import {
-  ArrowRight,
-  Building2,
-  Landmark,
-  Plus,
-  Search,
-  Users,
-  Wallet,
-} from "lucide-react-native";
-import {
-  AppText,
-  Avatar,
-  Button,
-  Card,
-  Header,
-  Input,
-  Screen,
-} from "@/components/ui";
+import * as Haptics from "expo-haptics";
+import { AppText, Header, IconCircle, Screen } from "@/components/ui";
+import { AppIcon, type IconName } from "@/components/app-icon";
+import { useGuardedRouter } from "@/lib/navigation";
 import { frequentTransfers } from "@/data/mock";
 
-const targets = [
-  { key: "bank", label: "Bank", Icon: Landmark },
-  { key: "ewallet", label: "E-Wallet", Icon: Wallet },
-  { key: "virtual", label: "Virtual Account", Icon: Building2 },
-  { key: "payra", label: "Payra Users", Icon: Users },
-] as const;
+/** The "Payra Users" glyph in Figma is the logo mark with a white dot (24×19). */
+const payraMark = `<svg width="24" height="19" viewBox="0 0 24 19" fill="none"><path d="M0 14.4083V0L17.9221 3.72151e-05L24 6.01669V19H4.51948L0 14.4083Z" fill="#0B4647"/><path d="M8.1039 4.17267C8.88919 3.17358 10.0982 2.53337 11.4545 2.53337C13.8215 2.53337 15.7403 4.48279 15.7403 6.88752C15.7403 9.29226 13.8215 11.2417 11.4545 11.2417C10.0982 11.2417 8.88919 10.6014 8.1039 9.60222V14.4083H4.51948V2.53337H8.1039V4.17267Z" fill="#ECF0AF"/><path d="M15.4286 11.875H17.9221V14.4083H15.4286V11.875Z" fill="#FAFAFA"/></svg>`;
 
+const targets: { label: string; icon?: IconName }[] = [
+  { label: "Bank", icon: "bank" },
+  { label: "E-Wallet", icon: "wallet-money-bold" },
+  { label: "Virtual Account", icon: "notes-bold" },
+  { label: "Payra Users" },
+];
+
+const avatars = [
+  require("@/../assets/images/avatar-1.png"),
+  require("@/../assets/images/avatar-2.png"),
+  require("@/../assets/images/avatar-3.png"),
+];
+
+/** Figma "Request" (563:1388), titled Transfer: three r24 cards, 24 apart. */
 export default function TransferScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const goPick = () =>
-    router.push({
-      pathname: "/select-contact",
-      params: { next: "send-amount" },
-    });
+  const pickContact = () => router.push("/select-contact");
+  const tap = () => Haptics.selectionAsync().catch(() => {});
 
   return (
-    <Screen>
+    <Screen scroll>
       <Header title="Transfer" />
-      <Card style={styles.block}>
-        <AppText variant="body" weight="semiBold">
-          To Your Account
-        </AppText>
-        <AppText variant="captionL" tone="secondary">
-          Transfer funds to your own wallet instantly and securely
-        </AppText>
-        <Button
-          title="Add"
-          size="md"
-          icon={<Plus size={14} color={theme.colors.onBrand} />}
-          onPress={() => router.push("/top-up")}
-        />
-      </Card>
-
-      <Card style={styles.block}>
-        <AppText variant="body" weight="semiBold">
-          Transfer to Others
-        </AppText>
-        <View style={styles.targets}>
-          {targets.map(({ key, label, Icon }) => (
-            <View key={key} style={styles.target}>
-              <View style={styles.targetIcon} onTouchEnd={goPick}>
-                <Icon size={18} color={theme.colors.text} />
-              </View>
-              <AppText variant="captionS" tone="secondary" align="center">
-                {label}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </Card>
-
-      <Card style={styles.block}>
-        <AppText variant="body" weight="semiBold">
-          Frequent Transfers
-        </AppText>
-        <Input
-          placeholder="Search by name or phone number"
-          left={<Search size={16} color={theme.colors.textSecondary} />}
-          onFocus={goPick}
-        />
-        {frequentTransfers.map((c) => (
-          <View key={c.id} style={styles.frequent}>
-            <Avatar name={c.name} size="sm" />
-            <View>
-              <AppText variant="body" weight="semiBold">
-                {c.name}
-              </AppText>
-              <AppText variant="captionL" tone="secondary">
-                {c.bank} · {c.account}
-              </AppText>
-            </View>
+      <View style={styles.cards}>
+        <View style={styles.card}>
+          <View style={styles.gap8}>
+            <AppText variant="bodyL" weight="semiBold" style={styles.black}>
+              To Your Account
+            </AppText>
+            <AppText variant="captionL" tone="secondary">
+              Transfer funds to your own wallet instantly and securely
+            </AppText>
           </View>
-        ))}
-        <View style={styles.footer}>
-          <View style={styles.avatars}>
-            {["Aaliyah Putri", "Bima Andika", "Chandra Wijaya"].map((n, i) => (
-              <View
-                key={n}
-                style={[styles.avatarWrap, { marginLeft: i ? -10 : 0 }]}
-              >
-                <Avatar name={n} size="sm" />
-              </View>
+          <Pressable style={styles.smallButton} onPress={tap}>
+            <AppText variant="captionL" weight="semiBold" tone="onBrand">
+              Add
+            </AppText>
+            <AppIcon name="add" size={16} color={theme.colors.brandDark} />
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <AppText variant="bodyL" weight="semiBold" style={styles.black}>
+            Transfer to Others
+          </AppText>
+          <View style={styles.targets}>
+            {targets.map((t) => (
+              <Pressable key={t.label} style={styles.target} onPress={t.icon ? tap : pickContact}>
+                <IconCircle>
+                  {t.icon ? (
+                    <AppIcon name={t.icon} size={24} color={theme.colors.text} />
+                  ) : (
+                    <SvgXml xml={payraMark} width={24} height={19} />
+                  )}
+                </IconCircle>
+                <AppText variant="captionS" style={styles.black}>
+                  {t.label}
+                </AppText>
+              </Pressable>
             ))}
           </View>
-          <Button
-            title="View All Contacts"
-            size="sm"
-            fullWidth={false}
-            icon={<ArrowRight size={14} color={theme.colors.onBrand} />}
-            onPress={goPick}
-          />
         </View>
-      </Card>
+
+        <View style={styles.card}>
+          <AppText variant="bodyL" weight="semiBold" style={styles.black}>
+            Frequent Transfers
+          </AppText>
+          <Pressable style={styles.search} onPress={pickContact}>
+            <AppIcon name="search" size={18} color={theme.colors.text} />
+            <AppText variant="captionL" tone="secondary">
+              Search by name or phone number
+            </AppText>
+          </Pressable>
+          {frequentTransfers.map((c) => (
+            <Pressable key={c.id} style={styles.frequent} onPress={pickContact}>
+              <IconCircle size="md">
+                <AppText variant="captionL" weight="semiBold" style={styles.black}>
+                  JD
+                </AppText>
+              </IconCircle>
+              <View style={styles.gap6}>
+                <AppText variant="captionL" weight="semiBold">
+                  {c.name}
+                </AppText>
+                <View style={styles.row6}>
+                  <AppText variant="captionS" tone="secondary">
+                    {c.bank}
+                  </AppText>
+                  <AppText variant="captionS" tone="secondary">
+                    {c.account}
+                  </AppText>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+          <View style={styles.divider} />
+          <View style={styles.footer}>
+            <View style={styles.avatars}>
+              {avatars.map((src, i) => (
+                <View key={i} style={i > 0 && styles.overlap}>
+                  <IconCircle size="sm">
+                    <Image source={src} style={styles.avatar} />
+                  </IconCircle>
+                </View>
+              ))}
+            </View>
+            <Pressable style={[styles.smallButton, styles.viewAll]} onPress={pickContact}>
+              <AppText variant="captionL" weight="semiBold" tone="onBrand">
+                View All Contacts
+              </AppText>
+              <AppIcon name="arrow-right" size={16} color={theme.colors.brandDark} />
+            </Pressable>
+          </View>
+        </View>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  block: { gap: theme.spacing.md, marginBottom: theme.spacing.md },
-  targets: { flexDirection: "row", justifyContent: "space-between" },
-  target: { alignItems: "center", gap: 6, width: 72 },
-  targetIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.surfaceAlt,
+  cards: { gap: 24 },
+  card: {
+    gap: 24,
+    padding: 18,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surfaceRaised,
+  },
+  black: { color: theme.palette.black },
+  gap6: { gap: 6 },
+  gap8: { gap: 8 },
+  row6: { flexDirection: "row", gap: 6 },
+  // Figma Primary / Small / Icon right: 36 tall, padding 12, gap 8, r24.
+  smallButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    height: 36,
+    marginTop: -6,
+    paddingHorizontal: 12,
+    borderRadius: 24,
+    backgroundColor: theme.colors.brand,
   },
-  frequent: {
+  // Same 87.5pt columns as Home's Other Payment.
+  targets: { flexDirection: "row", marginHorizontal: -8 },
+  target: { flex: 1, alignItems: "center", gap: 8 },
+  // Figma Search Bar / Default: 42 tall, Background/B0, 6% stroke, r12, padding 12/16, gap 12.
+  search: {
     flexDirection: "row",
     alignItems: "center",
-    gap: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    gap: 12,
+    height: 42,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.stroke.soft,
+    backgroundColor: theme.colors.background,
   },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.stroke.soft,
-    paddingTop: theme.spacing.md,
-  },
+  frequent: { flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 6 },
+  divider: { height: 1, backgroundColor: theme.colors.stroke.soft },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   avatars: { flexDirection: "row" },
-  avatarWrap: {
-    borderWidth: 2,
-    borderColor: theme.colors.surface,
-    borderRadius: 16,
-  },
+  overlap: { marginLeft: -10 },
+  avatar: { width: 28, height: 28 },
+  viewAll: { marginTop: 0 },
 }));

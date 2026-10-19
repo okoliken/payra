@@ -1,363 +1,323 @@
-import { useRef, useState } from "react";
-import { useGuardedRouter } from '@/lib/navigation';
-import {
-  FlatList,
-  Pressable,
-  View,
-  useWindowDimensions,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
-import { Link } from 'expo-router';
+import { useEffect, useState } from "react";
+import { Image, Pressable, TextInput, View, useWindowDimensions } from "react-native";
+import { useIsFocused } from "expo-router";
+import Animated, {
+  Easing,
+  FadeInDown,
+  LinearTransition,
+  interpolate,
+  interpolateColor,
+  useAnimatedProps,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Droplets,
-  Eye,
-  EyeOff,
-  LayoutGrid,
-  Plus,
-  Wifi,
-  Zap,
-} from "lucide-react-native";
-import { AppText, Card, IconButton, Logo, Screen } from "@/components/ui";
-import { AppIcon } from "@/components/app-icon";
+import * as Haptics from "expo-haptics";
+import { AppText, IconCircle, Logo, Screen } from "@/components/ui";
+import { AppIcon, type IconName } from "@/components/app-icon";
 import { TransactionRow } from "@/components/transaction-row";
-import { homeBanners, otherPayments } from "@/data/mock";
-import { formatMoney } from "@/lib/format";
-import { selectUnreadCount, useStore } from '@/store/app-store';
+import { useGuardedRouter } from "@/lib/navigation";
+import { formatMoneyWorklet } from "@/lib/format";
+import { useStore } from "@/store/app-store";
 
-const paymentIcons = {
-  electricity: Zap,
-  water: Droplets,
-  internet: Wifi,
-  more: LayoutGrid,
-} as const;
+const payments: { label: string; icon: IconName }[] = [
+  { label: "Electricity", icon: "bolt" },
+  { label: "Water", icon: "waterdrop" },
+  { label: "Internet", icon: "wifi" },
+  { label: "More", icon: "widget" },
+];
+
+// Exported from the Figma carousel. It opens on the yellow banner (dot 1) with a dark one
+// peeking on each side, so the list is [slide 3, slide 1, slide 2] starting at index 1.
+const banners = [
+  require("@/../assets/images/promo-1.png"),
+  require("@/../assets/images/promo-2.png"),
+  require("@/../assets/images/promo-3.png"),
+];
+const BANNER_GAP = 6;
+const dotForIndex = (i: number) => (i + 2) % banners.length;
+
+const AnimatedInput = Animated.createAnimatedComponent(TextInput);
+Animated.addWhitelistedNativeProps({ text: true });
 
 export default function HomeScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
   const { user, balance, hideBalance, toggleBalance, transactions } = useStore();
-  const unreadCount = useStore(selectUnreadCount);
+  const focused = useIsFocused();
   const { width } = useWindowDimensions();
   const bannerWidth = width - theme.spacing.gutter * 2;
-  const [banner, setBanner] = useState(0);
-  const listRef = useRef<FlatList>(null);
+  const bannerStep = bannerWidth + BANNER_GAP;
+  const scrollX = useSharedValue(bannerStep);
 
-  const onBannerEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) =>
-    setBanner(
-      Math.round(
-        e.nativeEvent.contentOffset.x / (bannerWidth + theme.spacing.md),
-      ),
-    );
+  // Changes made on other screens (a transfer) play out here once Home is back on screen:
+  // the balance counts to its new value and the new transaction slides in at the top.
+  const shownBalance = useSharedValue(balance);
+  const [shownTransactions, setShownTransactions] = useState(transactions);
+  useEffect(() => {
+    if (!focused) return;
+    shownBalance.value = withDelay(350, withTiming(balance, { duration: 900, easing: Easing.out(Easing.cubic) }));
+    const t = setTimeout(() => setShownTransactions(transactions), 350);
+    return () => clearTimeout(t);
+  }, [focused, balance, transactions, shownBalance]);
+
+  const balanceProps = useAnimatedProps(() => {
+    const text = hideBalance ? "$ ••••••" : formatMoneyWorklet(shownBalance.value);
+    return { text, defaultValue: text } as object;
+  });
+
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollX.value = e.contentOffset.x;
+  });
+
+  const tap = () => Haptics.selectionAsync().catch(() => {});
 
   return (
-    <Screen scroll tabBarInset>
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Logo size={32} />
-        <View style={styles.topActions}>
-          <IconButton onPress={() => router.push("/notifications")}>
-            <AppIcon name="bell" size={20} color={theme.colors.brandDark} />
-            {unreadCount > 0 ? <View style={styles.badge} /> : null}
-          </IconButton>
-          <Pressable
-            onPress={() => router.push("/promo")}
-            style={styles.promoChip}
-          >
-            <AppIcon name="sale" size={20} color={theme.colors.brandDark} />
-            <AppText variant="body" weight="semiBold" tone="onBrand">
-              Promo
-            </AppText>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Balance card */}
-      <Card tone="dark" style={styles.balanceCard}>
-        <View style={styles.balanceHeader}>
-          <View>
-            <AppText variant="bodyL" weight="semiBold" tone="onDark">
-              Hello, {user.name.split(" ")[0]}
-            </AppText>
-            <AppText variant="captionL" tone="onDarkMuted">
-              Your Balance
-            </AppText>
+    <Screen scroll tabBarInset gutter={false}>
+      <View style={styles.gutter}>
+        <View style={styles.topBar}>
+          <Logo size={40} />
+          <View style={styles.topActions}>
+            <Pressable style={styles.bell} onPress={tap}>
+              <AppIcon name="bell-bing" size={20} color={theme.colors.text} />
+            </Pressable>
+            <Pressable style={styles.promo} onPress={tap}>
+              <AppIcon name="sale-bold" size={20} color={theme.colors.brandDark} />
+              <AppText variant="bodyL" weight="semiBold" tone="onBrand">
+                Promo
+              </AppText>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => router.push("/points")}
-            style={styles.pointsChip}
-          >
-            <AppIcon name="coin" size={12} color={theme.colors.brandDark} />
-            <AppText variant="captionL" weight="semiBold" tone="onBrand">
-              {user.points} Points
-            </AppText>
-          </Pressable>
         </View>
-        <View style={styles.balanceRow}>
-          <AppText variant="h2" weight="semiBold" tone="onDark">
-            {hideBalance ? "$ ••••••" : formatMoney(balance)}
-          </AppText>
-          <IconButton
-            tone="onDark"
-            size="md"
-            onPress={() => toggleBalance()}
-          >
-            {hideBalance ? (
-              <EyeOff size={16} color={theme.colors.onBrandDark} />
-            ) : (
-              <Eye size={16} color={theme.colors.onBrandDark} />
-            )}
-          </IconButton>
-        </View>
-        <View style={styles.actions}>
-          <IconButton tone="brand" onPress={() => router.push("/top-up")}>
-            <Plus size={18} color={theme.colors.onBrand} />
-          </IconButton>
-          <Pressable
-            onPress={() => router.push("/request")}
-            style={styles.actionPill}
-          >
-            <ArrowDownLeft size={14} color={theme.colors.onBrandDark} />
-            <AppText variant="captionL" weight="semiBold" tone="onDark">
-              Request
-            </AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push("/transfer")}
-            style={styles.actionPill}
-          >
-            <ArrowUpRight size={14} color={theme.colors.onBrandDark} />
-            <AppText variant="captionL" weight="semiBold" tone="onDark">
-              Transfer
-            </AppText>
-          </Pressable>
-          <IconButton tone="onDark" onPress={() => router.push("/scan")}>
-            <AppIcon name="scanner" size={16} color={theme.colors.onBrandDark} />
-          </IconButton>
-        </View>
-      </Card>
 
-      {/* Other payment */}
-      <AppText variant="body" weight="semiBold" style={styles.sectionTitle}>
-        Other Payment
-      </AppText>
-      <Card style={styles.paymentsCard}>
-        {otherPayments.map((p) => {
-          const Icon = paymentIcons[p.key];
-          return (
-            <Pressable
-              key={p.key}
-              onPress={() =>
-                router.push(
-                  p.key === "more" ? "/bills/more" : `/bills/${p.key}`,
-                )
-              }
-              style={styles.paymentItem}
-            >
-              <View style={styles.paymentIcon}>
-                <Icon size={20} color={theme.colors.text} strokeWidth={1.75} />
+        <View style={styles.balanceCard}>
+          <View style={styles.balanceTop}>
+            <View style={styles.greeting}>
+              <View style={styles.gap4}>
+                <AppText variant="h5" weight="semiBold" style={styles.onCard}>
+                  Hello, {user.name.split(" ")[0]}
+                </AppText>
+                <AppText variant="body" style={styles.onCard}>
+                  Your Balance
+                </AppText>
               </View>
-              <AppText variant="captionL" tone="secondary">
+              <View style={styles.points}>
+                <AppIcon name="coin-vertical-fill" size={14} color={theme.colors.brandDark} />
+                <AppText variant="captionS" weight="semiBold" tone="onBrand">
+                  {user.points} Points
+                </AppText>
+              </View>
+            </View>
+            <View style={styles.balanceRow}>
+              <AnimatedInput
+                editable={false}
+                pointerEvents="none"
+                underlineColorAndroid="transparent"
+                animatedProps={balanceProps}
+                style={styles.balance}
+              />
+              <Pressable style={styles.eye} onPress={() => toggleBalance()}>
+                <AppIcon name="eye" size={16} color={theme.colors.surfaceRaised} />
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.actions}>
+            <Pressable style={[styles.action, styles.actionIcon, styles.actionAdd]} onPress={tap}>
+              <AppIcon name="add" size={16} color={theme.colors.brandDark} />
+            </Pressable>
+            <Pressable style={styles.action} onPress={tap}>
+              <AppIcon name="arrow-left-down" size={16} color={theme.colors.surfaceRaised} />
+              <AppText variant="captionL" weight="semiBold" style={styles.onCard}>
+                Request
+              </AppText>
+            </Pressable>
+            <Pressable style={styles.action} onPress={() => router.push("/transfer")}>
+              <AppIcon name="arrow-right-up" size={16} color={theme.colors.surfaceRaised} />
+              <AppText variant="captionL" weight="semiBold" style={styles.onCard}>
+                Transfer
+              </AppText>
+            </Pressable>
+            <Pressable style={[styles.action, styles.actionIcon]} onPress={tap}>
+              <AppIcon name="scanner" size={16} color={theme.colors.surfaceRaised} />
+            </Pressable>
+          </View>
+        </View>
+
+        <AppText variant="bodyL" weight="semiBold" style={styles.sectionTitle}>
+          Other Payment
+        </AppText>
+        <View style={styles.payments}>
+          {payments.map((p) => (
+            <Pressable key={p.label} style={styles.payment} onPress={tap}>
+              <IconCircle>
+                <AppIcon name={p.icon} size={24} color={theme.colors.text} />
+              </IconCircle>
+              <AppText variant="captionL" style={styles.black}>
                 {p.label}
               </AppText>
             </Pressable>
-          );
-        })}
-      </Card>
+          ))}
+        </View>
+      </View>
 
-      {/* Promo banners */}
-      <FlatList
-        ref={listRef}
-        data={homeBanners}
-        keyExtractor={(b) => b.id}
+      <Animated.FlatList
+        data={banners}
+        keyExtractor={(_, i) => String(i)}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={bannerWidth + theme.spacing.md}
+        snapToInterval={bannerStep}
         decelerationRate="fast"
-        onMomentumScrollEnd={onBannerEnd}
-        contentContainerStyle={{ gap: theme.spacing.md }}
+        initialScrollIndex={1}
+        getItemLayout={(_, index) => ({ length: bannerStep, offset: bannerStep * index, index })}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.bannerList}
         style={styles.banners}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push("/promo")}>
-            <Card tone="brand" style={[styles.banner, { width: bannerWidth }]}>
-              <View style={styles.bannerCopy}>
-                <AppText variant="h5" weight="bold" tone="onBrand">
-                  {item.title}
-                </AppText>
-                <AppText variant="body" weight="medium" tone="onBrand">
-                  {item.subtitle}
-                </AppText>
-                <AppText
-                  variant="captionS"
-                  tone="onBrand"
-                  style={styles.bannerBody}
-                >
-                  {item.body}
-                </AppText>
-              </View>
-              <View style={styles.bannerArt}>
-                <Logo size={44} wordmark={false} />
-              </View>
-            </Card>
-          </Pressable>
+          <Image source={item} style={{ width: bannerWidth, height: (bannerWidth * 316) / 1110, borderRadius: 16 }} />
         )}
       />
       <View style={styles.dots}>
-        {homeBanners.map((b, i) => (
-          <View
-            key={b.id}
-            style={[styles.dot, i === banner && styles.dotActive]}
-          />
+        {banners.map((_, dot) => (
+          <Dot key={dot} index={banners.findIndex((__, i) => dotForIndex(i) === dot)} step={bannerStep} scrollX={scrollX} />
         ))}
       </View>
 
-      {/* Recent transactions */}
-      <View style={styles.recentHeader}>
-        <AppText variant="body" weight="semiBold">
+      <View style={styles.gutter}>
+        <AppText variant="bodyL" weight="semiBold" style={[styles.sectionTitle, styles.recentTitle]}>
           Recent Transaction
         </AppText>
-        <Link href="/history">
-          <AppText variant="captionL" weight="semiBold" tone="secondary">
-            See all
-          </AppText>
-        </Link>
-      </View>
-      <View style={styles.recentList}>
-        {transactions.slice(0, 3).map((tx) => (
-          <TransactionRow key={tx.id} tx={tx} />
-        ))}
+        <View style={styles.recent}>
+          {shownTransactions.slice(0, 3).map((tx) => (
+            <Animated.View
+              key={tx.id}
+              entering={FadeInDown.duration(420).easing(Easing.out(Easing.cubic))}
+              layout={LinearTransition.duration(420).easing(Easing.out(Easing.cubic))}
+            >
+              <TransactionRow tx={tx} />
+            </Animated.View>
+          ))}
+        </View>
       </View>
     </Screen>
   );
 }
 
+/** Figma "Page Controls: Dot": active 18×8 Brand/Secondary, inactive 8×8 Text/Quaternary; follows the swipe. */
+function Dot({ index, step, scrollX }: { index: number; step: number; scrollX: SharedValue<number> }) {
+  const { theme } = useUnistyles();
+  const style = useAnimatedStyle(() => {
+    const p = interpolate(scrollX.value, [(index - 1) * step, index * step, (index + 1) * step], [0, 1, 0], "clamp");
+    return {
+      width: 8 + 10 * p,
+      backgroundColor: interpolateColor(p, [0, 1], [theme.colors.textQuaternary, theme.colors.brandDark]),
+    };
+  });
+  return <Animated.View style={[styles.dot, style]} />;
+}
+
 const styles = StyleSheet.create((theme) => ({
+  gutter: { paddingHorizontal: theme.spacing.gutter },
+  // Figma: top bar 58 tall (8 padding), 24 above the balance card.
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: 8,
+    marginBottom: 24,
+  },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 14 },
+  bell: {
+    width: 48,
     height: 48,
-    marginBottom: theme.spacing.md,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: theme.colors.stroke.soft,
   },
-  topActions: {
+  promo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  badge: {
-    position: "absolute",
-    top: 9,
-    right: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: theme.colors.danger,
-  },
-  promoChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: theme.radius.pill,
+    gap: 8,
+    height: 48,
+    paddingHorizontal: 12,
+    borderRadius: 24,
     backgroundColor: theme.colors.brand,
   },
-  balanceCard: { borderRadius: theme.radius.xl, gap: theme.spacing.md },
-  balanceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  // Figma balance card: 202 tall, padding 18, r24, Brand/Secondary, sections 24 apart.
+  balanceCard: {
+    padding: 18,
+    gap: 24,
+    borderRadius: 24,
+    backgroundColor: theme.colors.brandDark,
   },
-  // Figma: 88 hug × 32, gap 4, padding 6 top/bottom, 8 left, 10 right, r24, Brand/Primary.
-  pointsChip: {
+  balanceTop: { gap: 14 },
+  greeting: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  gap4: { gap: 4 },
+  onCard: { color: theme.colors.surfaceRaised },
+  points: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     height: 32,
-    paddingTop: 6,
-    paddingBottom: 6,
     paddingLeft: 8,
     paddingRight: 10,
     borderRadius: 24,
     backgroundColor: theme.colors.brand,
   },
-  balanceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  actionPill: {
+  balanceRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  balance: {
     flex: 1,
-    flexDirection: "row",
+    padding: 0,
+    color: theme.colors.surfaceRaised,
+    fontFamily: theme.fonts.bold,
+    ...theme.typography.h2,
+  },
+  eye: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    height: 40,
-    borderRadius: theme.radius.pill,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(250, 250, 250, 0.1)",
+    borderWidth: 1,
+    borderColor: theme.colors.stroke.soft,
   },
-  sectionTitle: {
-    marginTop: theme.spacing.xxl,
-    marginBottom: theme.spacing.md,
-  },
-  paymentsCard: { flexDirection: "row", justifyContent: "space-between" },
-  paymentItem: { alignItems: "center", gap: theme.spacing.sm, width: 64 },
-  paymentIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  banners: {
-    marginTop: theme.spacing.lg,
-    marginHorizontal: -theme.spacing.gutter,
-    paddingHorizontal: theme.spacing.gutter,
-  },
-  banner: {
+  actions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  action: {
     flexDirection: "row",
     alignItems: "center",
-    overflow: "hidden",
-    minHeight: 100,
+    gap: 8,
+    height: 42,
+    paddingHorizontal: 12,
+    borderRadius: 24,
+    backgroundColor: "rgba(250, 250, 250, 0.1)",
+    borderWidth: 1,
+    borderColor: theme.colors.stroke.soft,
   },
-  bannerCopy: { flex: 1, gap: 2 },
-  bannerBody: { marginTop: 4, maxWidth: 160 },
-  bannerArt: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "rgba(11,70,71,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: -30,
-  },
-  dots: {
+  actionIcon: { width: 40, paddingHorizontal: 0, justifyContent: "center" },
+  actionAdd: { backgroundColor: theme.colors.brand, borderWidth: 0 },
+  sectionTitle: { marginTop: 24, marginBottom: 16, color: theme.palette.black },
+  // Figma: r24 card, padding 18; four 87.5pt columns centred on the icons.
+  payments: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: theme.spacing.md,
+    paddingVertical: 18,
+    paddingHorizontal: 10,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surfaceRaised,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.fill.strong,
-  },
-  dotActive: { width: 16, backgroundColor: theme.colors.brandDark },
-  recentList: { gap: theme.spacing.lg },
-  recentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: theme.spacing.xxl,
-    marginBottom: theme.spacing.md,
-  },
+  payment: { flex: 1, alignItems: "center", gap: 8 },
+  black: { color: theme.palette.black },
+  banners: { marginTop: 24, flexGrow: 0 },
+  bannerList: { paddingHorizontal: theme.spacing.gutter, gap: BANNER_GAP },
+  dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 9.5 },
+  dot: { height: 8, borderRadius: 100 },
+  recentTitle: { marginTop: 25.5 },
+  recent: { gap: 16 },
 }));

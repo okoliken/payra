@@ -20,7 +20,7 @@ export function Logo({ size = 40, wordmark = true, onDark = false }: Props) {
         <Path d="M25.7143 18.75H29.8701V22.75H25.7143V18.75Z" fill={glyph} />
       </Svg>
       {wordmark ? (
-        <AppText variant="h4" weight="semiBold" tone={onDark ? "onDark" : "onBrand"} style={{ fontSize: size * 0.55, lineHeight: size * 0.7 }}>
+        <AppText variant="h4" weight="semiBold" tone={onDark ? "onDark" : "onBrand"} style={{ fontSize: size * 0.5, lineHeight: size * 0.7 }}>
           Payra.
         </AppText>
       ) : null}

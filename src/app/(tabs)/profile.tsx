@@ -4,11 +4,13 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Bell, LogOut, QrCode, Settings, ShieldCheck } from 'lucide-react-native';
 import { AppText, Avatar, Button, Card, Header, ListRow, Screen } from '@/components/ui';
 import { useStore } from '@/store/app-store';
+import * as Haptics from 'expo-haptics';
 
 export default function ProfileScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
   const { user, signOut } = useStore();
+  const tap = () => Haptics.selectionAsync().catch(() => {});
 
   return (
     <Screen scroll tabBarInset>
@@ -23,7 +25,7 @@ export default function ProfileScreen() {
             {user.email}
           </AppText>
         </View>
-        <Pressable onPress={() => router.push('/edit-profile')}>
+        <Pressable onPress={tap}>
           <AppText variant="captionL" weight="semiBold" tone="success">
             Edit Profile
           </AppText>
@@ -37,12 +39,12 @@ export default function ProfileScreen() {
         <AppText variant="captionL" tone="secondary">
           Access your personal QR for quick and seamless payments.
         </AppText>
-        <Button title="Show QR" size="md" icon={<QrCode size={16} color={theme.colors.onBrand} />} onPress={() => router.push('/request')} />
+        <Button title="Show QR" size="md" icon={<QrCode size={16} color={theme.colors.onBrand} />} onPress={tap} />
       </Card>
 
-      <ListRow card chevron icon={<ShieldCheck size={18} color={theme.colors.text} />} title="Account Security" subtitle="Secure your account with PIN, fingerprint, and protection settings." onPress={() => router.push('/account-security')} />
-      <ListRow card chevron icon={<Bell size={18} color={theme.colors.text} />} title="Notification" subtitle="Stay in control of alerts, updates, and notification preferences." onPress={() => router.push('/notifications')} />
-      <ListRow card chevron icon={<Settings size={18} color={theme.colors.text} />} title="General Settings" subtitle="Customize your app, manage preferences, and access account options." onPress={() => router.push('/settings')} />
+      <ListRow card chevron icon={<ShieldCheck size={18} color={theme.colors.text} />} title="Account Security" subtitle="Secure your account with PIN, fingerprint, and protection settings." onPress={tap} />
+      <ListRow card chevron icon={<Bell size={18} color={theme.colors.text} />} title="Notification" subtitle="Stay in control of alerts, updates, and notification preferences." onPress={tap} />
+      <ListRow card chevron icon={<Settings size={18} color={theme.colors.text} />} title="General Settings" subtitle="Customize your app, manage preferences, and access account options." onPress={tap} />
 
       <Button
         title="Log Out"
@@ -50,7 +52,7 @@ export default function ProfileScreen() {
         icon={<LogOut size={16} color={theme.colors.text} />}
         onPress={() => {
           signOut();
-          router.replace('/(auth)/sign-in');
+          router.replace('/');
         }}
       />
     </Screen>
