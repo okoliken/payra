@@ -11,7 +11,10 @@ export default function TabsLayout() {
     // tab at opacity 0 until the next navigation.
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
-      screenLayout={({ children }) => <TabScene>{children}</TabScene>}
+      screenLayout={({ children, route, navigation }) => {
+        const { index, routes } = navigation.getState();
+        return <TabScene selected={routes[index]?.key === route.key}>{children}</TabScene>;
+      }}
       screenOptions={{
         headerShown: false,
         lazy: false,
