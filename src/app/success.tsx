@@ -16,7 +16,7 @@ const EASE = Easing.out(Easing.cubic);
  */
 export default function SuccessScreen() {
   const router = useGuardedRouter();
-  const { title, body } = useLocalSearchParams<{ title: string; body: string }>();
+  const { id, title, body } = useLocalSearchParams<{ id?: string; title: string; body: string }>();
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -40,6 +40,13 @@ export default function SuccessScreen() {
         </Animated.View>
       </View>
       <Animated.View entering={FadeInDown.delay(420).duration(420).easing(EASE)} style={styles.cta}>
+        {id ? (
+          <Button
+            title="View Details"
+            variant="outline"
+            onPress={() => router.replace({ pathname: "/transaction/[id]", params: { id } })}
+          />
+        ) : null}
         <Button title="OK" onPress={() => router.dismissTo("/(tabs)")} />
       </Animated.View>
     </Screen>
@@ -49,6 +56,6 @@ export default function SuccessScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 32 },
   art: { width: 310, height: 200 },
-  cta: { marginBottom: 16 },
+  cta: { gap: 12, marginBottom: 16 },
   copy: { gap: 8, alignSelf: "stretch" },
 });

@@ -34,10 +34,25 @@ const EASE = Easing.out(Easing.cubic);
 export default function SendAmountScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const { contactId, via, mode } = useLocalSearchParams<{ contactId?: string; via?: string; mode?: "topup" }>();
+  // Recipient: a contact (`contactId`), an account looked up on /recipient (`name` + `detail`),
+  // or your own wallet (`mode=topup`).
+  const params = useLocalSearchParams<{
+    contactId?: string;
+    name?: string;
+    detail?: string;
+    via?: string;
+    mode?: "topup";
+  }>();
+  const { contactId, via, mode } = params;
   const balance = useStore((s) => s.balance);
   const topUp = mode === "topup";
-  const contact = findContact(contactId);
+  const contact = contactId ? findContact(contactId) : undefined;
+  const name = topUp ? "My Wallet" : (contact?.name ?? params.name ?? "");
+  const detail = topUp
+    ? "Transfer funds to your own wallet instantly and securely"
+    : contact
+      ? [via, contact.account ?? contact.phone].filter(Boolean).join(" · ")
+      : (params.detail ?? "");
   const [raw, setRaw] = useState("");
 
   const amount = Number(raw) || 0;
@@ -87,18 +102,16 @@ export default function SendAmountScreen() {
             <AppIcon name="wallet-money-bold" size={24} color={theme.colors.text} />
           ) : (
             <AppText variant="captionL" weight="semiBold" style={styles.black}>
-              {initials(contact.name)}
+              {initials(name)}
             </AppText>
           )}
         </IconCircle>
         <View style={styles.recipientText}>
           <AppText variant="body" weight="semiBold">
-            {topUp ? "My Wallet" : contact.name}
+            {name}
           </AppText>
           <AppText variant="captionL" tone="secondary">
-            {topUp
-              ? "Transfer funds to your own wallet instantly and securely"
-              : [via, contact.account ?? contact.phone].filter(Boolean).join(" · ")}
+            {detail}
           </AppText>
         </View>
       </View>
@@ -135,7 +148,9 @@ export default function SendAmountScreen() {
             ? reject()
             : router.push({
                 pathname: "/pin",
-                params: topUp ? { mode, amount: String(amount) } : { contactId: contact.id, amount: String(amount) },
+                params: topUp
+                  ? { mode, amount: String(amount) }
+                  : { amount: String(amount), name, detail, via: via ?? "Payra Users", ...(contactId ? { contactId } : {}) },
               })
         }
       />

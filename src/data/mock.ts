@@ -8,6 +8,10 @@ export type Transaction = {
   status: 'Completed' | 'Pending' | 'Failed';
   category: string;
   at: string; // ISO
+  /** Receipt extras for transfers made in the app. */
+  detail?: string; // e.g. "BCA · 1234567890"
+  method?: string; // Payra Users, Bank, E-Wallet, Virtual Account, My Wallet
+  contactId?: string;
 };
 
 export type Contact = { id: string; name: string; phone: string; bank?: string; account?: string };
@@ -195,3 +199,29 @@ export const countries = [
   { code: '+1', name: 'United States', flag: '🇺🇸' },
   { code: '+44', name: 'United Kingdom', flag: '🇬🇧' },
 ];
+
+export type Provider = { id: string; name: string; logo: number };
+
+/** Logos exported from the Figma Top Up frame ("Via bank" and the e-wallet row). */
+export const providers: Record<"Bank" | "E-Wallet", Provider[]> = {
+  Bank: [
+    { id: "bca", name: "BCA", logo: require("@/../assets/images/providers/bca.png") },
+    { id: "mandiri", name: "Mandiri", logo: require("@/../assets/images/providers/mandiri.png") },
+    { id: "bri", name: "BRI", logo: require("@/../assets/images/providers/bri.png") },
+    { id: "bni", name: "BNI", logo: require("@/../assets/images/providers/bni.png") },
+  ],
+  "E-Wallet": [
+    { id: "dana", name: "DANA", logo: require("@/../assets/images/providers/dana.png") },
+    { id: "jago", name: "Jago", logo: require("@/../assets/images/providers/jago.png") },
+    { id: "blu", name: "blu", logo: require("@/../assets/images/providers/blu.png") },
+  ],
+};
+
+const accountHolders = ["Rizky Pratama", "Nadia Kusuma", "Fajar Nugroho", "Sekar Ayu", "Dimas Saputra", "Laras Wulandari"];
+
+/** Fake "account name lookup": the same number always resolves to the same holder. */
+export const lookupAccount = (number: string) => {
+  let hash = 0;
+  for (const ch of number) hash = (hash * 31 + ch.charCodeAt(0)) % 9973;
+  return accountHolders[hash % accountHolders.length]!;
+};

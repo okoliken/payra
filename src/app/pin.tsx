@@ -32,7 +32,14 @@ const SENDING_MS = 1800;
  */
 export default function EnterPinScreen() {
   const router = useGuardedRouter();
-  const { contactId, amount, mode } = useLocalSearchParams<{ contactId?: string; amount: string; mode?: "topup" }>();
+  const { contactId, amount, mode, name, detail, via } = useLocalSearchParams<{
+    amount: string;
+    mode?: "topup";
+    contactId?: string;
+    name?: string;
+    detail?: string;
+    via?: string;
+  }>();
   const { addTransaction, signOut } = useStore();
   const [pin, setPin] = useState("");
   const shake = useSharedValue(0);
@@ -47,16 +54,16 @@ export default function EnterPinScreen() {
     const t = setTimeout(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       if (mode === "topup") {
-        addTransaction({ title: "Wallet Top-up", kind: "topup", amount: value, category: "My Wallet" });
-        router.replace({ pathname: "/success", params: { title: "Top Up Successful!", body: `You added ${shown} to your wallet` } });
+        const tx = addTransaction({ title: "Wallet Top-up", kind: "topup", amount: value, category: "My Wallet", method: "My Wallet" });
+        router.replace({ pathname: "/success", params: { id: tx.id, title: "Top Up Successful!", body: `You added ${shown} to your wallet` } });
       } else {
-        const contact = findContact(contactId);
-        addTransaction({ title: "Transfer", kind: "sent", amount: -value, category: contact.name });
-        router.replace({ pathname: "/success", params: { title: "Transfer Successful!", body: `You sent ${shown} to ${contact.name}` } });
+        const to = name ?? findContact(contactId).name;
+        const tx = addTransaction({ title: "Transfer", kind: "sent", amount: -value, category: to, detail, method: via, contactId });
+        router.replace({ pathname: "/success", params: { id: tx.id, title: "Transfer Successful!", body: `You sent ${shown} to ${to}` } });
       }
     }, SENDING_MS);
     return () => clearTimeout(t);
-  }, [sending, contactId, amount, mode, addTransaction, router]);
+  }, [sending, contactId, amount, mode, name, detail, via, addTransaction, router]);
 
   const onKey = (k: KeypadKey) => {
     if (sending) return;

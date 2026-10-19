@@ -1,4 +1,6 @@
 import { View } from 'react-native';
+import { PressableScale } from '@/components/pressable-scale';
+import { useGuardedRouter } from '@/lib/navigation';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { AppText, IconCircle } from '@/components/ui';
 import { AppIcon, type IconName } from '@/components/app-icon';
@@ -18,13 +20,15 @@ const iconFor: Record<Transaction['kind'], IconName> = {
  * IconCircle (48/40) with a 24pt Solar icon in Text/Primary, gap 12; text columns gap 6;
  * title Body SemiBold, status Caption Text/Tertiary; amount Body SemiBold in Green/Default or
  * Red/Default (no sign, as designed), meta "Category · HH:MM" Caption Text/Tertiary.
+ * Tapping opens the transaction's receipt.
  */
 export function TransactionRow({ tx }: { tx: Transaction }) {
   const { theme } = useUnistyles();
+  const router = useGuardedRouter();
   const positive = tx.amount > 0;
   const amount = `$${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
-    <View style={styles.card}>
+    <PressableScale style={styles.card} scale={0.98} onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })}>
       <IconCircle>
         <AppIcon name={iconFor[tx.kind]} size={24} color={theme.colors.text} />
       </IconCircle>
@@ -44,7 +48,7 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
           {tx.category} · {timeLabel(tx.at)}
         </AppText>
       </View>
-    </View>
+    </PressableScale>
   );
 }
 
