@@ -13,7 +13,7 @@ import * as Haptics from "expo-haptics";
 import { AppText, Screen } from "@/components/ui";
 import { Keypad, type KeypadKey } from "@/components/keypad";
 import { useGuardedRouter } from "@/lib/navigation";
-import { contacts } from "@/data/mock";
+import { findContact } from "@/data/mock";
 import { useStore } from "@/store/app-store";
 
 const LENGTH = 6;
@@ -21,23 +21,29 @@ const LENGTH = 6;
 /** Figma "Enter PIN" (338:1352), used here to authorise the transfer. Any 6 digits pass. */
 export default function EnterPinScreen() {
   const router = useGuardedRouter();
-  const { contactId, amount } = useLocalSearchParams<{ contactId: string; amount: string }>();
+  const { contactId, amount, mode } = useLocalSearchParams<{ contactId?: string; amount: string; mode?: "topup" }>();
   const { addTransaction, signOut } = useStore();
   const [pin, setPin] = useState("");
   const shake = useSharedValue(0);
 
   useEffect(() => {
     if (pin.length < LENGTH) return;
-    const contact = contacts.find((c) => c.id === contactId) ?? contacts[0]!;
     const value = Number(amount) || 0;
+    const shown = `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     // Let the last dot land before moving on.
     const t = setTimeout(() => {
-      addTransaction({ title: "Transfer", kind: "sent", amount: -value, category: contact.name });
-      router.replace({ pathname: "/success", params: { amount: value.toFixed(2), name: contact.name } });
+      if (mode === "topup") {
+        addTransaction({ title: "Wallet Top-up", kind: "topup", amount: value, category: "My Wallet" });
+        router.replace({ pathname: "/success", params: { title: "Top Up Successful!", body: `You added ${shown} to your wallet` } });
+      } else {
+        const contact = findContact(contactId);
+        addTransaction({ title: "Transfer", kind: "sent", amount: -value, category: contact.name });
+        router.replace({ pathname: "/success", params: { title: "Transfer Successful!", body: `You sent ${shown} to ${contact.name}` } });
+      }
     }, 280);
     return () => clearTimeout(t);
-  }, [pin, contactId, amount, addTransaction, router]);
+  }, [pin, contactId, amount, mode, addTransaction, router]);
 
   const onKey = (k: KeypadKey) => {
     if (k === "del") {

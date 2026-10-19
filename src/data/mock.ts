@@ -93,6 +93,10 @@ export const frequentTransfers: Contact[] = [
   { id: 'f1', name: 'John Doe', phone: '', bank: 'Mandiri', account: '1122334455667' },
 ];
 
+/** Anyone money can be sent to: the contact list plus frequent transfers. */
+export const findContact = (id?: string) =>
+  [...contacts, ...frequentTransfers].find((c) => c.id === id) ?? contacts[0]!;
+
 export const notifications: Notification[] = [
   { id: 'n1', title: 'New Login Detected', body: 'We noticed a login from a new device.', kind: 'security', at: hoursAgo(0.2), read: false },
   { id: 'n2', title: 'Payment Successful', body: 'Your transaction has been processed securely.', kind: 'payment', at: hoursAgo(1), read: false },

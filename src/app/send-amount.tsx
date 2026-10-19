@@ -15,10 +15,11 @@ import Animated, {
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Header, IconCircle, Screen } from "@/components/ui";
+import { AppIcon } from "@/components/app-icon";
 import { Keypad, type KeypadKey } from "@/components/keypad";
 import { useGuardedRouter } from "@/lib/navigation";
-import { formatMoney } from "@/lib/format";
-import { contacts } from "@/data/mock";
+import { formatMoney, initials } from "@/lib/format";
+import { findContact } from "@/data/mock";
 import { useStore } from "@/store/app-store";
 
 const EASE = Easing.out(Easing.cubic);
@@ -26,18 +27,20 @@ const EASE = Easing.out(Easing.cubic);
 /**
  * Not in the Figma file: the step between Select Contact and Enter PIN, built from the file's
  * own parts (contact row, PIN keypad, Primary button). Each digit drops in as it is typed; going
- * over the balance turns the amount red and shakes it.
+ * over the balance turns the amount red and shakes it. `mode=topup` adds money to your own wallet
+ * instead (Transfer's "Add" and Home's +), so there is no balance limit.
  */
 export default function SendAmountScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const { contactId } = useLocalSearchParams<{ contactId: string }>();
+  const { contactId, via, mode } = useLocalSearchParams<{ contactId?: string; via?: string; mode?: "topup" }>();
   const balance = useStore((s) => s.balance);
-  const contact = contacts.find((c) => c.id === contactId) ?? contacts[0]!;
+  const topUp = mode === "topup";
+  const contact = findContact(contactId);
   const [raw, setRaw] = useState("");
 
   const amount = Number(raw) || 0;
-  const over = amount > balance;
+  const over = !topUp && amount > balance;
   const shake = useSharedValue(0);
   const red = useSharedValue(0);
 
@@ -69,19 +72,25 @@ export default function SendAmountScreen() {
 
   return (
     <Screen>
-      <Header title="Transfer" />
+      <Header title={topUp ? "Top Up" : "Transfer"} />
       <View style={styles.recipient}>
         <IconCircle>
-          <AppText variant="captionL" weight="semiBold" style={styles.black}>
-            {contact.name[0]}
-          </AppText>
+          {topUp ? (
+            <AppIcon name="wallet-money-bold" size={24} color={theme.colors.text} />
+          ) : (
+            <AppText variant="captionL" weight="semiBold" style={styles.black}>
+              {initials(contact.name)}
+            </AppText>
+          )}
         </IconCircle>
-        <View style={styles.gap6}>
+        <View style={styles.recipientText}>
           <AppText variant="body" weight="semiBold">
-            {contact.name}
+            {topUp ? "My Wallet" : contact.name}
           </AppText>
           <AppText variant="captionL" tone="secondary">
-            {contact.phone}
+            {topUp
+              ? "Transfer funds to your own wallet instantly and securely"
+              : [via, contact.account ?? contact.phone].filter(Boolean).join(" · ")}
           </AppText>
         </View>
       </View>
@@ -110,7 +119,12 @@ export default function SendAmountScreen() {
         title="Continue"
         style={styles.cta}
         disabled={amount <= 0 || over}
-        onPress={() => router.push({ pathname: "/pin", params: { contactId: contact.id, amount: String(amount) } })}
+        onPress={() =>
+          router.push({
+            pathname: "/pin",
+            params: topUp ? { mode, amount: String(amount) } : { contactId: contact.id, amount: String(amount) },
+          })
+        }
       />
     </Screen>
   );
@@ -126,7 +140,7 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surfaceRaised,
   },
   black: { color: theme.palette.black },
-  gap6: { gap: 6 },
+  recipientText: { flex: 1, gap: 6 },
   center: { flex: 1, justifyContent: "center", gap: 8 },
   amount: { flexDirection: "row", justifyContent: "center" },
   char: { fontFamily: theme.fonts.bold, ...theme.typography.display },

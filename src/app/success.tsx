@@ -10,13 +10,13 @@ import { useGuardedRouter } from "@/lib/navigation";
 const EASE = Easing.out(Easing.cubic);
 
 /**
- * Figma "Password Changed!" (348:1931) layout and illustration, reused for the transfer result:
+ * Figma "Password Changed!" (348:1931) layout and illustration, reused for transfer / top-up results:
  * 310×200 art, 32 above an H4 title and Body copy, Primary "OK" 32 above the home indicator.
  * The art springs in, then the copy rises after it.
  */
 export default function SuccessScreen() {
   const router = useGuardedRouter();
-  const { amount, name } = useLocalSearchParams<{ amount: string; name: string }>();
+  const { title, body } = useLocalSearchParams<{ title: string; body: string }>();
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -32,10 +32,10 @@ export default function SuccessScreen() {
         />
         <Animated.View entering={FadeInDown.delay(280).duration(420).easing(EASE)} style={styles.copy}>
           <AppText variant="h4" weight="semiBold" align="center">
-            Transfer Successful!
+            {title}
           </AppText>
           <AppText variant="body" tone="secondary" align="center">
-            You sent ${amount} to {name}
+            {body}
           </AppText>
         </Animated.View>
       </View>

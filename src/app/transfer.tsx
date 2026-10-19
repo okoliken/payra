@@ -1,7 +1,6 @@
 import { Image, Pressable, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import * as Haptics from "expo-haptics";
 import { AppText, Header, IconCircle, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
 import { useGuardedRouter } from "@/lib/navigation";
@@ -27,8 +26,8 @@ const avatars = [
 export default function TransferScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const pickContact = () => router.push("/select-contact");
-  const tap = () => Haptics.selectionAsync().catch(() => {});
+  const pickContact = (params: { via?: string; search?: string } = {}) =>
+    router.push({ pathname: "/select-contact", params });
 
   return (
     <Screen scroll>
@@ -43,7 +42,10 @@ export default function TransferScreen() {
               Transfer funds to your own wallet instantly and securely
             </AppText>
           </View>
-          <Pressable style={styles.smallButton} onPress={tap}>
+          <Pressable
+            style={styles.smallButton}
+            onPress={() => router.push({ pathname: "/send-amount", params: { mode: "topup" } })}
+          >
             <AppText variant="captionL" weight="semiBold" tone="onBrand">
               Add
             </AppText>
@@ -57,7 +59,7 @@ export default function TransferScreen() {
           </AppText>
           <View style={styles.targets}>
             {targets.map((t) => (
-              <Pressable key={t.label} style={styles.target} onPress={t.icon ? tap : pickContact}>
+              <Pressable key={t.label} style={styles.target} onPress={() => pickContact({ via: t.label })}>
                 <IconCircle>
                   {t.icon ? (
                     <AppIcon name={t.icon} size={24} color={theme.colors.text} />
@@ -77,14 +79,18 @@ export default function TransferScreen() {
           <AppText variant="bodyL" weight="semiBold" style={styles.black}>
             Frequent Transfers
           </AppText>
-          <Pressable style={styles.search} onPress={pickContact}>
+          <Pressable style={styles.search} onPress={() => pickContact({ search: "1" })}>
             <AppIcon name="search" size={18} color={theme.colors.text} />
             <AppText variant="captionL" tone="secondary">
               Search by name or phone number
             </AppText>
           </Pressable>
           {frequentTransfers.map((c) => (
-            <Pressable key={c.id} style={styles.frequent} onPress={pickContact}>
+            <Pressable
+              key={c.id}
+              style={styles.frequent}
+              onPress={() => router.push({ pathname: "/send-amount", params: { contactId: c.id, via: c.bank } })}
+            >
               <IconCircle size="md">
                 <AppText variant="captionL" weight="semiBold" style={styles.black}>
                   JD
@@ -116,7 +122,7 @@ export default function TransferScreen() {
                 </View>
               ))}
             </View>
-            <Pressable style={[styles.smallButton, styles.viewAll]} onPress={pickContact}>
+            <Pressable style={[styles.smallButton, styles.viewAll]} onPress={() => pickContact()}>
               <AppText variant="captionL" weight="semiBold" tone="onBrand">
                 View All Contacts
               </AppText>

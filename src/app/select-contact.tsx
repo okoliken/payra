@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+import { useLocalSearchParams } from "expo-router";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { AppText, Header, IconCircle, Screen } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
@@ -13,6 +14,8 @@ const EASE = Easing.out(Easing.cubic);
 export default function SelectContactScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
+  // `via`: the method picked on Transfer (Bank, E-Wallet…); `search`: arrived from the search field.
+  const { via, search } = useLocalSearchParams<{ via?: string; search?: string }>();
   const [query, setQuery] = useState("");
   // Rows cascade in on the first render only; later renders come from typing in search.
   const [cascade, setCascade] = useState(true);
@@ -29,7 +32,7 @@ export default function SelectContactScreen() {
     );
   }, [query]);
 
-  const pick = (c: Contact) => router.push({ pathname: "/send-amount", params: { contactId: c.id } });
+  const pick = (c: Contact) => router.push({ pathname: "/send-amount", params: { contactId: c.id, ...(via ? { via } : {}) } });
 
   return (
     <Screen>
@@ -44,6 +47,7 @@ export default function SelectContactScreen() {
             placeholderTextColor={theme.colors.textSecondary}
             style={styles.input}
             autoCorrect={false}
+            autoFocus={!!search}
           />
         </View>
         <Pressable onPress={() => router.back()} hitSlop={8}>

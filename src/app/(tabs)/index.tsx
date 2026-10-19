@@ -126,7 +126,10 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.actions}>
-            <Pressable style={[styles.action, styles.actionIcon, styles.actionAdd]} onPress={tap}>
+            <Pressable
+              style={[styles.action, styles.actionIcon, styles.actionAdd]}
+              onPress={() => router.push({ pathname: "/send-amount", params: { mode: "topup" } })}
+            >
               <AppIcon name="add" size={16} color={theme.colors.brandDark} />
             </Pressable>
             <Pressable style={styles.action} onPress={tap}>
