@@ -65,11 +65,6 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [focused, balance, transactions, shownBalance]);
 
-  const balanceProps = useAnimatedProps(() => {
-    const text = hideBalance ? "$ ••••••" : formatMoneyWorklet(shownBalance.value);
-    return { text, defaultValue: text } as object;
-  });
-
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollX.value = e.contentOffset.x;
   });
@@ -113,15 +108,16 @@ export default function HomeScreen() {
               </View>
             </View>
             <View style={styles.balanceRow}>
-              <AnimatedInput
-                editable={false}
-                pointerEvents="none"
-                underlineColorAndroid="transparent"
-                animatedProps={balanceProps}
-                style={styles.balance}
-              />
-              <Pressable style={styles.eye} onPress={() => toggleBalance()}>
-                <AppIcon name="eye" size={16} color={theme.colors.surfaceRaised} />
+              <Balance value={shownBalance} hidden={hideBalance} />
+              <Pressable
+                style={styles.eye}
+                hitSlop={8}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  toggleBalance();
+                }}
+              >
+                <EyeIcon hidden={hideBalance} />
               </Pressable>
             </View>
           </View>
@@ -210,6 +206,77 @@ export default function HomeScreen() {
   );
 }
 
+const MASK_DOTS = 6;
+
+/**
+ * Hiding the balance: the amount lifts and fades while six dots drop in one after another;
+ * revealing plays it backwards. One shared value drives every piece on the UI thread.
+ */
+function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolean }) {
+  const h = useSharedValue(hidden ? 1 : 0);
+  useEffect(() => {
+    h.value = withTiming(hidden ? 1 : 0, { duration: 520, easing: Easing.inOut(Easing.cubic) });
+  }, [hidden, h]);
+
+  const textProps = useAnimatedProps(() => {
+    const text = formatMoneyWorklet(value.value);
+    return { text, defaultValue: text } as object;
+  });
+  const textStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(h.value, [0, 0.45], [1, 0], "clamp"),
+    transform: [{ translateY: interpolate(h.value, [0, 0.45], [0, -10], "clamp") }],
+  }));
+
+  return (
+    <View style={styles.balanceBox}>
+      <AnimatedInput
+        editable={false}
+        pointerEvents="none"
+        underlineColorAndroid="transparent"
+        animatedProps={textProps}
+        style={[styles.balance, textStyle]}
+      />
+      <View style={styles.mask} pointerEvents="none">
+        <MaskGlyph h={h} index={0}>
+          <AppText variant="h2" weight="bold" style={styles.onCardText}>
+            $
+          </AppText>
+        </MaskGlyph>
+        {Array.from({ length: MASK_DOTS }, (_, i) => (
+          <MaskGlyph key={i} h={h} index={i + 1}>
+            <View style={styles.maskDot} />
+          </MaskGlyph>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function MaskGlyph({ h, index, children }: { h: SharedValue<number>; index: number; children: React.ReactNode }) {
+  const style = useAnimatedStyle(() => {
+    const start = 0.3 + index * 0.06;
+    const p = interpolate(h.value, [start, start + 0.3], [0, 1], "clamp");
+    return { opacity: p, transform: [{ translateY: (1 - p) * 12 }, { scale: 0.6 + 0.4 * p }] };
+  });
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/** The Figma `eye` icon with a slash that draws across it while the balance is hidden. */
+function EyeIcon({ hidden }: { hidden: boolean }) {
+  const { theme } = useUnistyles();
+  const p = useSharedValue(hidden ? 1 : 0);
+  useEffect(() => {
+    p.value = withTiming(hidden ? 1 : 0, { duration: 260, easing: Easing.out(Easing.cubic) });
+  }, [hidden, p]);
+  const slash = useAnimatedStyle(() => ({ transform: [{ rotate: "-45deg" }, { scaleX: p.value }] }));
+  return (
+    <View>
+      <AppIcon name="eye" size={16} color={theme.colors.surfaceRaised} />
+      <Animated.View style={[styles.slash, slash]} />
+    </View>
+  );
+}
+
 /** Figma "Page Controls: Dot": active 18×8 Brand/Secondary, inactive 8×8 Text/Quaternary; follows the swipe. */
 function Dot({ index, step, scrollX }: { index: number; step: number; scrollX: SharedValue<number> }) {
   const { theme } = useUnistyles();
@@ -275,8 +342,20 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.brand,
   },
   balanceRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  balanceBox: { flex: 1, justifyContent: "center" },
+  mask: { position: "absolute", left: 0, flexDirection: "row", alignItems: "center", gap: 6 },
+  maskDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: theme.colors.surfaceRaised },
+  onCardText: { color: theme.colors.surfaceRaised },
+  slash: {
+    position: "absolute",
+    left: -1,
+    top: 7.25,
+    width: 18,
+    height: 1.5,
+    borderRadius: 1,
+    backgroundColor: theme.colors.surfaceRaised,
+  },
   balance: {
-    flex: 1,
     padding: 0,
     color: theme.colors.surfaceRaised,
     fontFamily: theme.fonts.bold,

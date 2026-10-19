@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
   Easing,
+  FadeIn,
   FadeInDown,
   FadeOutDown,
   LinearTransition,
@@ -27,7 +28,7 @@ const EASE = Easing.out(Easing.cubic);
 /**
  * Not in the Figma file: the step between Select Contact and Enter PIN, built from the file's
  * own parts (contact row, PIN keypad, Primary button). Each digit drops in as it is typed; going
- * over the balance turns the amount red and shakes it. `mode=topup` adds money to your own wallet
+ * over the balance turns the amount red, shakes it on every key (and on Continue) and says why. `mode=topup` adds money to your own wallet
  * instead (Transfer's "Add" and Home's +), so there is no balance limit.
  */
 export default function SendAmountScreen() {
@@ -46,20 +47,27 @@ export default function SendAmountScreen() {
 
   useEffect(() => {
     red.value = withTiming(over ? 1 : 0, { duration: 180 });
-    if (over) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      shake.value = withSequence(...[-10, 10, -7, 7, -3, 0].map((x) => withTiming(x, { duration: 45 })));
-    }
-  }, [over, red, shake]);
+  }, [over, red]);
 
-  const onKey = (k: KeypadKey) =>
-    setRaw((r) => {
-      if (k === "del") return r.slice(0, -1);
-      if (k === ".") return r.includes(".") ? r : (r || "0") + ".";
-      if (r === "0") return k;
-      if (r.includes(".") && r.split(".")[1]!.length >= 2) return r;
-      return r.replace(".", "").length < 7 ? r + k : r;
-    });
+  const reject = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    shake.value = withSequence(...[-12, 12, -9, 9, -5, 5, 0].map((x) => withTiming(x, { duration: 42 })));
+  };
+
+  const next = (r: string, k: KeypadKey) => {
+    if (k === "del") return r.slice(0, -1);
+    if (k === ".") return r.includes(".") ? r : (r || "0") + ".";
+    if (r === "0") return k;
+    if (r.includes(".") && r.split(".")[1]!.length >= 2) return r;
+    return r.replace(".", "").length < 7 ? r + k : r;
+  };
+
+  // Every key that leaves the amount over the balance shakes again, not just the first one.
+  const onKey = (k: KeypadKey) => {
+    const value = next(raw, k);
+    if (k !== "del" && !topUp && Number(value) > balance) reject();
+    setRaw(value);
+  };
 
   // "$1,250.5": group the whole part, keep what was typed after the point.
   const [whole, fraction] = raw.split(".");
@@ -109,21 +117,26 @@ export default function SendAmountScreen() {
             </Animated.Text>
           ))}
         </Animated.View>
-        <AppText variant="captionL" tone={over ? "danger" : "secondary"} align="center">
-          Your Balance {formatMoney(balance)}
-        </AppText>
+        <Animated.View key={over ? "over" : "ok"} entering={FadeIn.duration(180)}>
+          <AppText variant="captionL" weight={over ? "semiBold" : "regular"} tone={over ? "danger" : "secondary"} align="center">
+            {over ? `Insufficient balance · You have ${formatMoney(balance)}` : `Your Balance ${formatMoney(balance)}`}
+          </AppText>
+        </Animated.View>
       </View>
 
       <Keypad decimal onKey={onKey} />
       <Button
         title="Continue"
         style={styles.cta}
-        disabled={amount <= 0 || over}
+        disabled={amount <= 0}
+        haptic={!over}
         onPress={() =>
-          router.push({
-            pathname: "/pin",
-            params: topUp ? { mode, amount: String(amount) } : { contactId: contact.id, amount: String(amount) },
-          })
+          over
+            ? reject()
+            : router.push({
+                pathname: "/pin",
+                params: topUp ? { mode, amount: String(amount) } : { contactId: contact.id, amount: String(amount) },
+              })
         }
       />
     </Screen>
