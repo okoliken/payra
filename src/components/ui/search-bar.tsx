@@ -28,5 +28,6 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.stroke.soft,
   },
-  input: { flex: 1, paddingVertical: 0, fontFamily: theme.fonts.regular, fontSize: theme.typography.body.fontSize, color: theme.colors.text },
+  // Fill the bar's height: left to size itself, iOS gives the input a short box that clips the placeholder.
+  input: { flex: 1, alignSelf: 'stretch', paddingVertical: 0, fontFamily: theme.fonts.regular, fontSize: theme.typography.body.fontSize, color: theme.colors.text },
 }));

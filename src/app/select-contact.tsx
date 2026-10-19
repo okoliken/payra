@@ -121,6 +121,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   input: {
     flex: 1,
+    alignSelf: "stretch",
     padding: 0,
     color: theme.colors.text,
     fontFamily: theme.fonts.regular,
