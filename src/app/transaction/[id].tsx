@@ -2,28 +2,17 @@ import { useEffect, useState } from "react";
 import { Pressable, Share, TextInput, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  ZoomIn,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedProps, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Header, Screen } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoneyWorklet } from "@/lib/format";
+import { EASE, fade, rise } from "@/lib/motion";
 import type { Transaction } from "@/data/mock";
 import { useStore } from "@/store/app-store";
 
-const EASE = Easing.out(Easing.cubic);
 
 // Loaded lazily: an app binary built before expo-clipboard was added has no native module, and a
 // top-level import would crash the whole screen instead of just skipping the copy.
@@ -45,7 +34,7 @@ const reference = (tx: Transaction) => `PYR${tx.id.replace(/\D/g, "").slice(-10)
 /**
  * Not in Figma: the receipt for a transaction, built from the design system (B1 card, IconCircle
  * rhythm, Body / Caption type). On open the status check draws itself, the amount counts up and
- * the rows rise in one after another. The reference copies with a morphing Copy → Copied pill.
+ * the rows fade in one after another. The reference copies with a Copy → Copied cross-fade.
  */
 export default function TransactionDetailsScreen() {
   const router = useGuardedRouter();
@@ -55,7 +44,7 @@ export default function TransactionDetailsScreen() {
 
   const counted = useSharedValue(0);
   useEffect(() => {
-    if (tx) counted.value = withDelay(250, withTiming(Math.abs(tx.amount), { duration: 800, easing: EASE }));
+    if (tx) counted.value = withDelay(150, withTiming(Math.abs(tx.amount), { duration: 600, easing: EASE }));
   }, [tx, counted]);
   const amountProps = useAnimatedProps(() => {
     const text = formatMoneyWorklet(counted.value);
@@ -105,7 +94,7 @@ export default function TransactionDetailsScreen() {
       <View style={styles.ticket}>
         <View style={styles.top}>
           <StatusMark ok={tx.status === "Completed"} />
-          <Animated.View entering={FadeIn.delay(150).duration(300)} style={styles.center}>
+          <Animated.View entering={fade(100)} style={styles.center}>
             <AppText variant="body" tone="secondary" align="center">
               {tx.title} {tx.status === "Completed" ? "Successful" : tx.status}
             </AppText>
@@ -141,7 +130,7 @@ export default function TransactionDetailsScreen() {
           {rows.map((r, i) => (
             <Animated.View
               key={r.label}
-              entering={FadeInDown.delay(350 + i * 60).duration(360).easing(EASE)}
+              entering={rise(200 + i * 35)}
               style={[styles.row, r.label === "Total" && styles.totalRow]}
             >
               <AppText variant="body" tone="secondary">
@@ -164,7 +153,7 @@ export default function TransactionDetailsScreen() {
         </View>
       </View>
 
-      <Animated.View entering={FadeInDown.delay(800).duration(360).easing(EASE)} style={styles.actions}>
+      <Animated.View entering={rise(480)} style={styles.actions}>
         <Button title="Share Receipt" variant="outline" style={styles.flex} onPress={share} />
         {canRepeat ? <Button title="Send Again" style={styles.flex} onPress={sendAgain} /> : null}
       </Animated.View>
@@ -172,18 +161,18 @@ export default function TransactionDetailsScreen() {
   );
 }
 
-/** Green disc whose check mark draws itself (stroke dash offset), after the disc pops in. */
+/** Green disc whose check mark draws itself (stroke dash offset) once the disc has faded in. */
 function StatusMark({ ok }: { ok: boolean }) {
   const { theme } = useUnistyles();
   const draw = useSharedValue(0);
   useEffect(() => {
-    draw.value = withDelay(220, withTiming(1, { duration: 420, easing: EASE }));
+    draw.value = withDelay(180, withTiming(1, { duration: 360, easing: EASE }));
   }, [draw]);
   const LENGTH = 26;
   const checkProps = useAnimatedProps(() => ({ strokeDashoffset: LENGTH * (1 - draw.value) }));
   const color = ok ? theme.colors.success : theme.colors.warning;
   return (
-    <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.statusOuter, { backgroundColor: ok ? theme.colors.successSoft : theme.colors.warningSoft }]}>
+    <Animated.View entering={fade()} style={[styles.statusOuter, { backgroundColor: ok ? theme.colors.successSoft : theme.colors.warningSoft }]}>
       <View style={[styles.statusInner, { backgroundColor: color }]}>
         <Svg width={28} height={28} viewBox="0 0 28 28">
           <AnimatedPath
@@ -202,36 +191,32 @@ function StatusMark({ ok }: { ok: boolean }) {
   );
 }
 
-/** Copy pill: copies, then morphs to a green "Copied" with a check for a moment. */
+/** Copy pill: copies, then cross-fades to a green "Copied" with a check for a moment. */
 function CopyPill({ text }: { text: string }) {
   const { theme } = useUnistyles();
   const [copied, setCopied] = useState(false);
-  const pop = useSharedValue(1);
   useEffect(() => {
     if (!copied) return;
     const t = setTimeout(() => setCopied(false), 1600);
     return () => clearTimeout(t);
   }, [copied]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
   return (
     <Pressable
       hitSlop={8}
       onPress={() => {
         copyText(text);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        pop.set(0.85);
-        pop.set(withSpring(1, { damping: 8, stiffness: 300 }));
         setCopied(true);
       }}
     >
-      <Animated.View style={[styles.copy, copied && styles.copied, style]}>
-        <Animated.View key={copied ? "y" : "n"} entering={FadeIn.duration(160)} style={styles.copyInner}>
+      <View style={[styles.copy, copied && styles.copied]}>
+        <Animated.View key={copied ? "y" : "n"} entering={fade()} style={styles.copyInner}>
           {copied ? <AppIcon name="check" size={12} color={theme.colors.success} /> : null}
           <AppText variant="captionS" weight="semiBold" tone={copied ? "success" : "onBrand"}>
             {copied ? "Copied" : "Copy"}
           </AppText>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }

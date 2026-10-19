@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
-  Easing,
   FadeIn,
-  FadeInDown,
-  FadeOutDown,
+  FadeOut,
   LinearTransition,
   interpolateColor,
   useAnimatedStyle,
@@ -21,9 +19,9 @@ import { Keypad, type KeypadKey } from "@/components/keypad";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoney, initials } from "@/lib/format";
 import { findContact } from "@/data/mock";
+import { EASE, SHAKE, rise } from "@/lib/motion";
 import { useStore } from "@/store/app-store";
 
-const EASE = Easing.out(Easing.cubic);
 
 /**
  * Not in the Figma file: the step between Select Contact and Enter PIN, built from the file's
@@ -66,7 +64,7 @@ export default function SendAmountScreen() {
 
   const reject = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    shake.value = withSequence(...[-12, 12, -9, 9, -5, 5, 0].map((x) => withTiming(x, { duration: 42 })));
+    shake.value = withSequence(...SHAKE.map((x) => withTiming(x, { duration: 40 })));
   };
 
   const next = (r: string, k: KeypadKey) => {
@@ -121,8 +119,8 @@ export default function SendAmountScreen() {
           {shown.split("").map((ch, i) => (
             <Animated.Text
               key={`${i}-${ch}`}
-              entering={FadeInDown.duration(220).easing(EASE)}
-              exiting={FadeOutDown.duration(140)}
+              entering={rise()}
+              exiting={FadeOut.duration(100)}
               layout={LinearTransition.duration(200).easing(EASE)}
               style={[styles.char, colorStyle, !raw && styles.placeholder]}
             >

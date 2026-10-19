@@ -1,5 +1,5 @@
 import { Pressable, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText } from "@/components/ui";
@@ -31,22 +31,21 @@ export function Keypad({ onKey, decimal = false }: { onKey: (k: KeypadKey) => vo
   );
 }
 
-/** Each key dips and shows a soft disc under the finger, on the UI thread. */
+/** A soft disc fades in behind the key while it is held, like the iOS passcode pad. */
 function Key({ k, onKey }: { k: KeypadKey; onKey: (k: KeypadKey) => void }) {
   const { theme } = useUnistyles();
   const down = useSharedValue(0);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: 1 - down.value * 0.06 }] }));
-  const disc = useAnimatedStyle(() => ({ opacity: down.value, transform: [{ scale: 0.7 + down.value * 0.3 }] }));
+  const disc = useAnimatedStyle(() => ({ opacity: down.value }));
 
   return (
     <AnimatedPressable
-      style={[styles.key, style]}
+      style={styles.key}
       onPressIn={() => {
-        down.set(withTiming(1, { duration: 70 }));
+        down.set(withTiming(1, { duration: 60 }));
         Haptics.selectionAsync().catch(() => {});
         onKey(k);
       }}
-      onPressOut={() => down.set(withSpring(0, { damping: 18, stiffness: 260 }))}
+      onPressOut={() => down.set(withTiming(0, { duration: 220 }))}
     >
       <Animated.View style={[styles.disc, disc]} />
       {k === "del" ? (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
-import Animated, { Easing, FadeIn, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
+import { EASE, rise } from "@/lib/motion";
 import { useLocalSearchParams } from "expo-router";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { AppText, Header, IconCircle, Screen } from "@/components/ui";
@@ -8,7 +9,6 @@ import { AppIcon } from "@/components/app-icon";
 import { useGuardedRouter } from "@/lib/navigation";
 import { contacts, type Contact } from "@/data/mock";
 
-const EASE = Easing.out(Easing.cubic);
 
 /** Figma "Request / New Request" (535:6326), titled Select Contact. */
 export default function SelectContactScreen() {
@@ -71,7 +71,7 @@ export default function SelectContactScreen() {
             key={c.id}
             entering={
               cascade
-                ? FadeInDown.delay(60 + i * 35).duration(380).easing(EASE)
+                ? rise(40 + i * 25)
                 : FadeIn.duration(200)
             }
             exiting={FadeOut.duration(150)}

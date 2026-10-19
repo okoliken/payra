@@ -3,7 +3,6 @@ import { Image, Pressable, TextInput, View, useWindowDimensions } from "react-na
 import { useIsFocused } from "expo-router";
 import Animated, {
   Easing,
-  FadeInDown,
   LinearTransition,
   interpolate,
   interpolateColor,
@@ -23,6 +22,7 @@ import { TransactionRow } from "@/components/transaction-row";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoneyWorklet } from "@/lib/format";
 import { useStore } from "@/store/app-store";
+import { rise } from "@/lib/motion";
 
 const payments: { label: string; icon: IconName }[] = [
   { label: "Electricity", icon: "bolt" },
@@ -194,7 +194,7 @@ export default function HomeScreen() {
           {shownTransactions.slice(0, 3).map((tx) => (
             <Animated.View
               key={tx.id}
-              entering={FadeInDown.duration(420).easing(Easing.out(Easing.cubic))}
+              entering={rise()}
               layout={LinearTransition.duration(420).easing(Easing.out(Easing.cubic))}
             >
               <TransactionRow tx={tx} />
@@ -209,13 +209,13 @@ export default function HomeScreen() {
 const MASK_DOTS = 6;
 
 /**
- * Hiding the balance: the amount lifts and fades while six dots drop in one after another;
+ * Hiding the balance: the amount fades up a few points while six dots fade in one after another;
  * revealing plays it backwards. One shared value drives every piece on the UI thread.
  */
 function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolean }) {
   const h = useSharedValue(hidden ? 1 : 0);
   useEffect(() => {
-    h.value = withTiming(hidden ? 1 : 0, { duration: 520, easing: Easing.inOut(Easing.cubic) });
+    h.value = withTiming(hidden ? 1 : 0, { duration: 420, easing: Easing.inOut(Easing.cubic) });
   }, [hidden, h]);
 
   const textProps = useAnimatedProps(() => {
@@ -224,7 +224,7 @@ function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolea
   });
   const textStyle = useAnimatedStyle(() => ({
     opacity: interpolate(h.value, [0, 0.45], [1, 0], "clamp"),
-    transform: [{ translateY: interpolate(h.value, [0, 0.45], [0, -10], "clamp") }],
+    transform: [{ translateY: interpolate(h.value, [0, 0.45], [0, -4], "clamp") }],
   }));
 
   return (
@@ -254,9 +254,9 @@ function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolea
 
 function MaskGlyph({ h, index, children }: { h: SharedValue<number>; index: number; children: React.ReactNode }) {
   const style = useAnimatedStyle(() => {
-    const start = 0.3 + index * 0.06;
-    const p = interpolate(h.value, [start, start + 0.3], [0, 1], "clamp");
-    return { opacity: p, transform: [{ translateY: (1 - p) * 12 }, { scale: 0.6 + 0.4 * p }] };
+    const start = 0.35 + index * 0.04;
+    const p = interpolate(h.value, [start, start + 0.25], [0, 1], "clamp");
+    return { opacity: p, transform: [{ translateY: (1 - p) * 4 }] };
   });
   return <Animated.View style={style}>{children}</Animated.View>;
 }

@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
 import { Image, KeyboardAvoidingView, TextInput, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  ZoomIn,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Header, IconCircle, Screen } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
-import { PressableScale } from "@/components/pressable-scale";
+import { Tappable } from "@/components/tappable";
 import { useGuardedRouter } from "@/lib/navigation";
 import { initials } from "@/lib/format";
+import { fade, rise } from "@/lib/motion";
 import { lookupAccount, providers, type Provider } from "@/data/mock";
 
 type Method = "Bank" | "E-Wallet" | "Virtual Account";
@@ -34,7 +25,7 @@ type Lookup = { state: "idle" } | { state: "checking" } | { state: "found"; name
 /**
  * Not in Figma: where Bank / E-Wallet / Virtual Account transfers start. Pick a provider, type the
  * number, and the account holder's name is looked up as you type (simulated): a pulsing skeleton
- * while it checks, then the name springs in with a check. Continue goes straight to the amount.
+ * while it checks, then the name fades in with a check. Continue goes straight to the amount.
  */
 export default function RecipientScreen() {
   const router = useGuardedRouter();
@@ -109,7 +100,7 @@ export default function RecipientScreen() {
           <View style={styles.lookup}>
             {lookup.state === "checking" ? <Skeleton /> : null}
             {lookup.state === "found" ? (
-              <Animated.View entering={FadeInDown.duration(320).easing(Easing.out(Easing.cubic))} style={styles.found}>
+              <Animated.View entering={rise()} style={styles.found}>
                 <IconCircle>
                   <AppText variant="captionL" weight="semiBold" style={styles.black}>
                     {initials(lookup.name)}
@@ -123,13 +114,13 @@ export default function RecipientScreen() {
                     {detail}
                   </AppText>
                 </View>
-                <Animated.View entering={ZoomIn.delay(160).springify().damping(10)} style={styles.check}>
+                <Animated.View entering={fade(120)} style={styles.check}>
                   <AppIcon name="check" size={14} color={theme.colors.surfaceRaised} />
                 </Animated.View>
               </Animated.View>
             ) : null}
             {lookup.state === "idle" && number.length > 0 ? (
-              <Animated.View entering={FadeIn.duration(200)}>
+              <Animated.View entering={fade()}>
                 <AppText variant="captionL" tone="secondary">
                   {text.min - number.length > 0 ? `${text.min - number.length} more digits to check the name` : " "}
                 </AppText>
@@ -151,38 +142,35 @@ export default function RecipientScreen() {
   );
 }
 
-/** Logo tile; the chosen one pops and gets a Brand/Secondary ring. */
+/** Logo tile; the chosen one gets a Brand/Secondary ring that fades in. */
 function ProviderTile({ provider, selected, onPress }: { provider: Provider; selected: boolean; onPress: () => void }) {
-  const { theme } = useUnistyles();
   const p = useSharedValue(selected ? 1 : 0);
   useEffect(() => {
-    p.value = selected ? withSpring(1, { damping: 12, stiffness: 220 }) : withTiming(0, { duration: 160 });
+    p.value = withTiming(selected ? 1 : 0, { duration: 180 });
   }, [selected, p]);
-  const ring = useAnimatedStyle(() => ({
-    borderColor: selected ? theme.colors.brandDark : "transparent",
-    transform: [{ scale: 0.92 + 0.08 * p.value }],
-  }));
+  const ring = useAnimatedStyle(() => ({ opacity: p.value }));
   return (
-    <PressableScale style={styles.tile} onPress={onPress}>
-      <Animated.View style={[styles.ring, ring]}>
+    <Tappable style={styles.tile} onPress={onPress}>
+      <View>
+        <Animated.View style={[styles.ring, ring]} />
         <Image source={provider.logo} style={styles.logo} />
-      </Animated.View>
+      </View>
       <AppText variant="captionL" weight={selected ? "semiBold" : "regular"} tone={selected ? "primary" : "secondary"}>
         {provider.name}
       </AppText>
-    </PressableScale>
+    </Tappable>
   );
 }
 
 /** Pulsing placeholder in the shape of the result row while the name is being checked. */
 function Skeleton() {
-  const o = useSharedValue(0.5);
+  const o = useSharedValue(0.6);
   useEffect(() => {
-    o.value = withRepeat(withTiming(1, { duration: 550, easing: Easing.inOut(Easing.quad) }), -1, true);
+    o.value = withRepeat(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.quad) }), -1, true);
   }, [o]);
   const pulse = useAnimatedStyle(() => ({ opacity: o.value }));
   return (
-    <Animated.View entering={FadeIn.duration(150)} style={[styles.found, pulse]}>
+    <Animated.View entering={fade()} style={[styles.found, pulse]}>
       <View style={styles.skCircle} />
       <View style={styles.foundText}>
         <View style={[styles.skBar, { width: 140 }]} />
@@ -204,7 +192,16 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surfaceRaised,
   },
   tile: { flex: 1, alignItems: "center", gap: 8 },
-  ring: { padding: 3, borderRadius: 30, borderWidth: 2 },
+  ring: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: theme.colors.brandDark,
+  },
   logo: { width: 48, height: 48 },
   // Figma Input: label Body SemiBold → 8 → 48pt field, r12, Background/B2, 6% stroke, padding 16.
   field: { gap: 8 },

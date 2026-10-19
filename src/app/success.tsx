@@ -1,36 +1,59 @@
-import { useEffect } from "react";
-import { View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import Animated, { Easing, FadeInDown, ZoomIn } from "react-native-reanimated";
-import { StyleSheet } from "react-native-unistyles";
+import Animated, { FadeOut } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Screen } from "@/components/ui";
 import { useGuardedRouter } from "@/lib/navigation";
+import { fade, rise } from "@/lib/motion";
 
-const EASE = Easing.out(Easing.cubic);
+/** How long the (simulated) request takes, so the processing state is actually seen. */
+const PROCESSING_MS = 1600;
 
 /**
- * Figma "Password Changed!" (348:1931) layout and illustration, reused for transfer / top-up results:
- * 310×200 art, 32 above an H4 title and Body copy, Primary "OK" 32 above the home indicator.
- * The art springs in, then the copy rises after it.
+ * Transfer / top-up result. It opens on a processing state (spinner + one line, the way banking
+ * apps hold the screen while a payment goes through), then cross-fades to the result: Figma
+ * "Password Changed!" (348:1931) layout and illustration, 310×200 art, 32 above an H4 title and
+ * Body copy, Primary "OK" 32 above the home indicator.
  */
 export default function SuccessScreen() {
   const router = useGuardedRouter();
-  const { id, title, body } = useLocalSearchParams<{ id?: string; title: string; body: string }>();
+  const { theme } = useUnistyles();
+  const { id, kind, title, body } = useLocalSearchParams<{ id?: string; kind?: "topup" | "transfer"; title: string; body: string }>();
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    const t = setTimeout(() => {
+      setDone(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }, PROCESSING_MS);
+    return () => clearTimeout(t);
   }, []);
+
+  if (!done) {
+    return (
+      <Screen>
+        <Animated.View exiting={FadeOut.duration(150)} style={styles.center}>
+          <ActivityIndicator size="large" color={theme.colors.brandDark} />
+          <View style={styles.copy}>
+            <AppText variant="h5" weight="semiBold" align="center">
+              {kind === "topup" ? "Adding money…" : "Sending money…"}
+            </AppText>
+            <AppText variant="body" tone="secondary" align="center">
+              This will only take a moment
+            </AppText>
+          </View>
+        </Animated.View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
       <View style={styles.center}>
-        <Animated.Image
-          entering={ZoomIn.springify().damping(13).stiffness(140).delay(80)}
-          source={require("@/../assets/images/success-art.png")}
-          style={styles.art}
-        />
-        <Animated.View entering={FadeInDown.delay(280).duration(420).easing(EASE)} style={styles.copy}>
+        <Animated.Image entering={fade()} source={require("@/../assets/images/success-art.png")} style={styles.art} />
+        <Animated.View entering={rise(120)} style={styles.copy}>
           <AppText variant="h4" weight="semiBold" align="center">
             {title}
           </AppText>
@@ -39,7 +62,7 @@ export default function SuccessScreen() {
           </AppText>
         </Animated.View>
       </View>
-      <Animated.View entering={FadeInDown.delay(420).duration(420).easing(EASE)} style={styles.cta}>
+      <Animated.View entering={fade(220)} style={styles.cta}>
         {id ? (
           <Button
             title="View Details"

@@ -1,7 +1,6 @@
 import { Image, Pressable, View } from "react-native";
 import { SvgXml } from "react-native-svg";
-import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { PressableScale } from "@/components/pressable-scale";
+import { Tappable } from "@/components/tappable";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { AppText, Header, IconCircle, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
@@ -139,34 +138,15 @@ export default function TransferScreen() {
   );
 }
 
-/**
- * A "Transfer to Others" option. Under the finger it compresses; on release a ring ripples out
- * of the icon and the next screen opens a beat later, so the tap visibly lands.
- */
+/** A "Transfer to Others" option: dims under the finger, then opens its path. */
 function Target({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
-  const ripple = useSharedValue(0);
-  const ring = useAnimatedStyle(() => ({
-    opacity: interpolate(ripple.value, [0, 0.15, 1], [0, 0.45, 0]),
-    transform: [{ scale: 1 + ripple.value * 0.55 }],
-  }));
   return (
-    <PressableScale
-      style={styles.target}
-      scale={0.9}
-      onPress={() => {
-        ripple.set(0);
-        ripple.set(withTiming(1, { duration: 480, easing: Easing.out(Easing.cubic) }));
-        setTimeout(onPress, 140);
-      }}
-    >
-      <View>
-        <Animated.View style={[styles.ripple, ring]} />
-        <IconCircle>{children}</IconCircle>
-      </View>
+    <Tappable style={styles.target} onPress={onPress}>
+      <IconCircle>{children}</IconCircle>
       <AppText variant="captionS" style={styles.black}>
         {label}
       </AppText>
-    </PressableScale>
+    </Tappable>
   );
 }
 
@@ -197,14 +177,6 @@ const styles = StyleSheet.create((theme) => ({
   // Same 87.5pt columns as Home's Other Payment.
   targets: { flexDirection: "row", marginHorizontal: -8 },
   target: { flex: 1, alignItems: "center", gap: 8 },
-  ripple: {
-    position: "absolute",
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: theme.colors.brandDark,
-  },
   // Figma Search Bar / Default: 42 tall, Background/B0, 6% stroke, r12, padding 12/16, gap 12.
   search: {
     flexDirection: "row",

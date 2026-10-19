@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { PressableScale } from '@/components/pressable-scale';
+import { Tappable } from '@/components/tappable';
 import { useGuardedRouter } from '@/lib/navigation';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { AppText, IconCircle } from '@/components/ui';
@@ -28,7 +28,7 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const positive = tx.amount > 0;
   const amount = `$${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
-    <PressableScale style={styles.card} scale={0.98} onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })}>
+    <Tappable style={styles.card} onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })}>
       <IconCircle>
         <AppIcon name={iconFor[tx.kind]} size={24} color={theme.colors.text} />
       </IconCircle>
@@ -48,7 +48,7 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
           {tx.category} · {timeLabel(tx.at)}
         </AppText>
       </View>
-    </PressableScale>
+    </Tappable>
   );
 }
 
