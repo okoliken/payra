@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PrivacyShield } from '@/components/privacy-shield';
 import { useUnistyles } from 'react-native-unistyles';
 import {
   PlusJakartaSans_400Regular,
@@ -49,6 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="unlock" options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
           <Stack.Screen name="success" options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
         </Stack>
+        <PrivacyShield />
     </GestureHandlerRootView>
   );
 }

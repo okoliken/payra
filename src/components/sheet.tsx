@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
+import { PrivacyShield } from "@/components/privacy-shield";
 
 const OPEN = { duration: 340, easing: Easing.bezier(0.32, 0.72, 0, 1) };
 const CLOSE = { duration: 240, easing: Easing.in(Easing.cubic) };
@@ -76,6 +77,8 @@ export function Sheet({
             {children}
           </Animated.View>
         </GestureDetector>
+        {/* The Modal is its own window above the app, so it needs its own privacy cover. */}
+        <PrivacyShield />
       </GestureHandlerRootView>
     </Modal>
   );
