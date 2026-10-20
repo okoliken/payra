@@ -28,7 +28,11 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const positive = tx.amount > 0;
   const amount = `$${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
-    <Tappable style={styles.card} onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })}>
+    <Tappable
+      style={styles.card}
+      accessibilityLabel={`${tx.title}, ${positive ? 'received' : 'sent'} ${amount}, ${tx.category}, ${tx.status}`}
+      accessibilityHint="Opens the receipt"
+      onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })}>
       <IconCircle>
         <AppIcon name={iconFor[tx.kind]} size={24} color={theme.colors.text} />
       </IconCircle>

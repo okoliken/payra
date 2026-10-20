@@ -1,17 +1,53 @@
-import { TextInput, View, type TextInputProps } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { X } from 'lucide-react-native';
 import { AppIcon } from '@/components/app-icon';
+
+type Props = Omit<TextInputProps, 'value' | 'onChangeText'> & {
+  value: string;
+  onChangeText: (text: string) => void;
+};
 
 /**
  * Figma "Search Bar" component: 48 tall, r12, Background/B1 fill, 1px Stroke/Secondary outside,
- * padding 16 / 12, gap 12, `search` icon + Body placeholder.
+ * padding 16 / 12, gap 12, `search` icon + Body placeholder. A clear button fades in whenever
+ * there is text (iOS's own only shows while the field is focused) and keeps the keyboard up.
  */
-export function SearchBar(props: TextInputProps) {
+export function SearchBar({ value, onChangeText, style, ...rest }: Props) {
   const { theme } = useUnistyles();
+  const input = useRef<TextInput>(null);
   return (
     <View style={styles.bar}>
-      <AppIcon name="search" size={20} color={theme.colors.text} />
-      <TextInput placeholderTextColor={theme.colors.textSecondary} returnKeyType="search" clearButtonMode="while-editing" {...props} style={[styles.input, props.style]} />
+      <AppIcon name="search" size={18} color={theme.colors.text} />
+      <TextInput
+        ref={input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholderTextColor={theme.colors.textSecondary}
+        returnKeyType="search"
+        autoCorrect={false}
+        accessibilityRole="search"
+        {...rest}
+        style={[styles.input, style]}
+      />
+      {value ? (
+        <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(120)}>
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            onPress={() => {
+              onChangeText('');
+              input.current?.focus();
+            }}
+            style={styles.clear}
+          >
+            <X size={12} strokeWidth={3} color={theme.colors.surfaceRaised} />
+          </Pressable>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -29,5 +65,20 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.colors.stroke.soft,
   },
   // Fill the bar's height: left to size itself, iOS gives the input a short box that clips the placeholder.
-  input: { flex: 1, alignSelf: 'stretch', paddingVertical: 0, fontFamily: theme.fonts.regular, fontSize: theme.typography.body.fontSize, color: theme.colors.text },
+  input: {
+    flex: 1,
+    alignSelf: 'stretch',
+    paddingVertical: 0,
+    fontFamily: theme.fonts.regular,
+    fontSize: theme.typography.body.fontSize,
+    color: theme.colors.text,
+  },
+  clear: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.textTertiary,
+  },
 }));

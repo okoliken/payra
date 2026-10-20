@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { AccessibilityInfo, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
   FadeOut,
@@ -46,7 +46,8 @@ export default function SendScreen() {
 
   useEffect(() => {
     red.value = withTiming(over ? 1 : 0, { duration: 180 });
-  }, [over, red]);
+    if (over) AccessibilityInfo.announceForAccessibility(`Insufficient balance. You have ${formatMoney(balance)}`);
+  }, [over, red, balance]);
 
   const reject = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -95,7 +96,12 @@ export default function SendScreen() {
       ) : null}
 
       <View style={styles.center}>
-        <Animated.View style={[styles.amount, amountStyle]}>
+        <Animated.View
+          style={[styles.amount, amountStyle]}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={`Amount ${shown}`}
+        >
           {shown.split("").map((ch, i) => (
             <Animated.Text
               key={`${i}-${ch}`}

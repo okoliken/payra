@@ -72,10 +72,10 @@ export function Sheet({
       <GestureHandlerRootView style={styles.root}>
         <Animated.View style={[styles.backdrop, backdrop]}>
           <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-          <Pressable style={[styles.fill, styles.dim]} onPress={close} />
+          <Pressable style={[styles.fill, styles.dim]} onPress={close} accessibilityRole="button" accessibilityLabel="Close" />
         </Animated.View>
         <GestureDetector gesture={pan}>
-          <Animated.View style={[styles.panel, panel]} layout={LinearTransition.duration(260).easing(Easing.out(Easing.cubic))}>
+          <Animated.View accessibilityViewIsModal style={[styles.panel, panel]} layout={LinearTransition.duration(260).easing(Easing.out(Easing.cubic))}>
             <View style={styles.grabber} />
             {children}
           </Animated.View>

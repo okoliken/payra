@@ -25,7 +25,7 @@ export function Header({ title, center, right, onBack, showBack = true, onDark =
     <View style={styles.row}>
       <View style={styles.slot}>
         {showBack ? (
-          <IconButton tone={onDark ? 'onDark' : 'surface'} size="lg" onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/(tabs)')))}>
+          <IconButton accessibilityLabel="Back" tone={onDark ? 'onDark' : 'surface'} size="lg" onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/(tabs)')))}>
             <AppIcon name="alt-arrow-left" size={20} color={iconColor} />
           </IconButton>
         ) : null}

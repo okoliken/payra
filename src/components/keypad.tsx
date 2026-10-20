@@ -51,6 +51,8 @@ function Key({ k, onKey }: { k: KeypadKey; onKey: (k: KeypadKey) => void }) {
 
   return (
     <AnimatedPressable
+      accessibilityRole="keyboardkey"
+      accessibilityLabel={k === "del" ? "Delete" : k === "." ? "Decimal point" : k}
       style={styles.key}
       onPressIn={() => {
         down.set(1);

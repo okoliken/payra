@@ -24,7 +24,8 @@ export type AppTextProps = TextProps & {
 
 export function AppText({ variant = 'body', weight = 'regular', tone = 'primary', align = 'left', style, ...rest }: AppTextProps) {
   styles.useVariants({ variant, weight, tone, align });
-  return <Text style={[styles.text, style]} {...rest} />;
+  // Follows the system text size (Dynamic Type), capped so the fixed Figma layouts still hold.
+  return <Text maxFontSizeMultiplier={1.35} style={[styles.text, style]} {...rest} />;
 }
 
 const styles = StyleSheet.create((theme) => ({

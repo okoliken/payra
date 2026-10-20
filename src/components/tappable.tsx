@@ -15,6 +15,7 @@ export function Tappable({ style, haptic = true, onPressIn, onPressOut, ...rest 
   const animated = useAnimatedStyle(() => ({ opacity: 1 - 0.35 * down.value }));
   return (
     <AnimatedPressable
+      accessibilityRole="button"
       {...rest}
       style={[style, animated]}
       onPressIn={(e) => {

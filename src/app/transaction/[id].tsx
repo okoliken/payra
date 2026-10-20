@@ -207,6 +207,8 @@ function CopyPill({ text }: { text: string }) {
   return (
     <Pressable
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={copied ? "Reference copied" : "Copy reference"}
       onPress={() => {
         copyText(text);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

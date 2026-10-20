@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Image, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
-import { AppText, Header, IconCircle, Screen } from "@/components/ui";
+import { AppText, Header, IconCircle, Screen, SearchBar } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { ReviewSheet } from "@/components/review-sheet";
 import { Tappable } from "@/components/tappable";
@@ -49,21 +49,10 @@ export default function SendToScreen() {
   );
 
   return (
-    <Screen>
+    // The list scrolls under the home indicator; its own bottom padding keeps the last row clear.
+    <Screen style={styles.screen}>
       <Header title={`Send ${formatMoney(amount)}`} />
-      <View style={styles.field}>
-        <AppIcon name="search" size={18} color={theme.colors.text} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Name, phone or account number"
-          placeholderTextColor={theme.colors.textSecondary}
-          autoCorrect={false}
-          autoCapitalize="words"
-          style={styles.input}
-          clearButtonMode="while-editing"
-        />
-      </View>
+      <SearchBar value={query} onChangeText={setQuery} placeholder="Name, phone or account number" autoCapitalize="words" />
 
       <ScrollView style={styles.fill} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {isAccount ? (
@@ -77,7 +66,7 @@ export default function SendToScreen() {
                 </AppText>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recent}>
                   {recent.map((r) => (
-                    <Tappable key={r.name} style={styles.recentItem} onPress={() => setPicked(r)}>
+                    <Tappable key={r.name} style={styles.recentItem} accessibilityLabel={`Send to ${r.name}`} onPress={() => setPicked(r)}>
                       <Avatar recipient={r} />
                       <AppText variant="captionL" numberOfLines={1}>
                         {r.name.split(" ")[0]}
@@ -101,7 +90,7 @@ export default function SendToScreen() {
                   matches.map((b, i) => (
                     <Animated.View key={b.name} entering={fade()} exiting={FadeOut.duration(120)} layout={layout}>
                       {i > 0 ? <View style={styles.divider} /> : null}
-                      <Tappable style={styles.row} onPress={() => setPicked(b)}>
+                      <Tappable style={styles.row} accessibilityLabel={`${b.name}, ${recipientDetail(b)}`} onPress={() => setPicked(b)}>
                         <Avatar recipient={b} />
                         <View style={styles.rowText}>
                           <AppText variant="body" weight="semiBold">
@@ -262,29 +251,10 @@ function Skeleton() {
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
   fill: { flex: 1 },
-  // Figma Search Bar (focused): 48 tall, Background/B1, 6% stroke, r12, padding 16, gap 12.
-  field: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    height: 48,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.stroke.soft,
-    backgroundColor: theme.colors.surfaceRaised,
-  },
-  input: {
-    flex: 1,
-    alignSelf: "stretch",
-    padding: 0,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.regular,
-    fontSize: theme.typography.body.fontSize,
-  },
-  content: { paddingTop: 24, paddingBottom: 32 },
+  screen: { paddingBottom: 0 },
+  content: { paddingTop: 24, paddingBottom: rt.insets.bottom + 24 },
   sections: { gap: 24 },
   section: { gap: 16 },
   recent: { gap: 20, paddingRight: 16 },

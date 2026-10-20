@@ -39,7 +39,11 @@ export function PinPad({ onComplete, compact = false }: { onComplete: (pin: stri
 
   return (
     <View>
-      <Animated.View style={[styles.dots, compact && styles.dotsCompact, dotsStyle]}>
+      <Animated.View
+        style={[styles.dots, compact && styles.dotsCompact, dotsStyle]}
+        accessible
+        accessibilityLabel={`PIN, ${pin.length} of ${PIN_LENGTH} digits entered`}
+      >
         {Array.from({ length: PIN_LENGTH }, (_, i) => (
           <Dot key={i} filled={i < pin.length} />
         ))}

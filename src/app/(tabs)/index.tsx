@@ -20,7 +20,7 @@ import { AppText, IconCircle, Logo, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
 import { TransactionRow } from "@/components/transaction-row";
 import { useGuardedRouter } from "@/lib/navigation";
-import { formatMoneyWorklet } from "@/lib/format";
+import { formatMoney, formatMoneyWorklet } from "@/lib/format";
 import { useStore } from "@/store/app-store";
 import { rise } from "@/lib/motion";
 
@@ -75,10 +75,10 @@ export default function HomeScreen() {
         <View style={styles.topBar}>
           <Logo size={40} />
           <View style={styles.topActions}>
-            <Pressable style={styles.bell} onPress={tap}>
+            <Pressable style={styles.bell} onPress={tap} accessibilityRole="button" accessibilityLabel="Notifications">
               <AppIcon name="bell-bing" size={20} color={theme.colors.text} />
             </Pressable>
-            <Pressable style={styles.promo} onPress={tap}>
+            <Pressable style={styles.promo} onPress={tap} accessibilityRole="button">
               <AppIcon name="sale-bold" size={20} color={theme.colors.brandDark} />
               <AppText variant="bodyL" weight="semiBold" tone="onBrand">
                 Promo
@@ -106,9 +106,11 @@ export default function HomeScreen() {
               </View>
             </View>
             <View style={styles.balanceRow}>
-              <Balance value={shownBalance} hidden={hideBalance} />
+              <Balance value={shownBalance} hidden={hideBalance} balance={balance} />
               <Pressable
                 style={styles.eye}
+                accessibilityRole="button"
+                accessibilityLabel={hideBalance ? "Show balance" : "Hide balance"}
                 hitSlop={8}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -122,23 +124,25 @@ export default function HomeScreen() {
           <View style={styles.actions}>
             <Pressable
               style={[styles.action, styles.actionIcon, styles.actionAdd]}
+              accessibilityRole="button"
+              accessibilityLabel="Top up"
               onPress={() => router.push({ pathname: "/send", params: { mode: "topup" } })}
             >
               <AppIcon name="add" size={16} color={theme.colors.brandDark} />
             </Pressable>
-            <Pressable style={styles.action} onPress={tap}>
+            <Pressable style={styles.action} onPress={tap} accessibilityRole="button">
               <AppIcon name="arrow-left-down" size={16} color={theme.colors.surfaceRaised} />
               <AppText variant="captionL" weight="semiBold" style={styles.onCard}>
                 Request
               </AppText>
             </Pressable>
-            <Pressable style={styles.action} onPress={() => router.push("/send")}>
+            <Pressable style={styles.action} onPress={() => router.push("/send")} accessibilityRole="button">
               <AppIcon name="arrow-right-up" size={16} color={theme.colors.surfaceRaised} />
               <AppText variant="captionL" weight="semiBold" style={styles.onCard}>
                 Transfer
               </AppText>
             </Pressable>
-            <Pressable style={[styles.action, styles.actionIcon]} onPress={tap}>
+            <Pressable style={[styles.action, styles.actionIcon]} onPress={tap} accessibilityRole="button" accessibilityLabel="Scan to pay">
               <AppIcon name="scanner" size={16} color={theme.colors.surfaceRaised} />
             </Pressable>
           </View>
@@ -209,7 +213,7 @@ const MASK_DOTS = 6;
  * Hiding the balance: the amount fades up a few points while six dots fade in one after another;
  * revealing plays it backwards. One shared value drives every piece on the UI thread.
  */
-function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolean }) {
+function Balance({ value, hidden, balance }: { value: SharedValue<number>; hidden: boolean; balance: number }) {
   const h = useSharedValue(hidden ? 1 : 0);
   useEffect(() => {
     h.value = withTiming(hidden ? 1 : 0, { duration: 420, easing: Easing.inOut(Easing.cubic) });
@@ -225,7 +229,12 @@ function Balance({ value, hidden }: { value: SharedValue<number>; hidden: boolea
   }));
 
   return (
-    <View style={styles.balanceBox}>
+    <View
+      style={styles.balanceBox}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={hidden ? "Balance hidden" : `Balance ${formatMoney(balance)}`}
+    >
       <AnimatedInput
         editable={false}
         pointerEvents="none"

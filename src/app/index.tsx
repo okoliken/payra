@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { Logo, Screen } from '@/components/ui';
@@ -10,16 +10,8 @@ import { DEV_ROUTE } from '@/dev-route';
 export default function LaunchScreen() {
   const router = useGuardedRouter();
   const signedIn = useStore((s) => s.signedIn);
-  const [hydrated, setHydrated] = useState(useStore.persist.hasHydrated());
-
   // The persisted store loads from AsyncStorage asynchronously; don't route on stale defaults.
-  useEffect(() => {
-    if (useStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return;
-    }
-    return useStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
+  const hydrated = useSyncExternalStore(useStore.persist.onFinishHydration, useStore.persist.hasHydrated);
 
   useEffect(() => {
     if (!hydrated) return;
