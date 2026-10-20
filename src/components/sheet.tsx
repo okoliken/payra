@@ -9,6 +9,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
 import { StyleSheet } from "react-native-unistyles";
 import { PrivacyShield } from "@/components/privacy-shield";
 
@@ -17,7 +18,7 @@ const CLOSE = { duration: 240, easing: Easing.in(Easing.cubic) };
 const OFFSCREEN = 900;
 
 /**
- * Bottom sheet: slides up over a dimmed backdrop with an iOS-like ease, drags down to dismiss,
+ * Bottom sheet: slides up over a blurred, lightly dimmed backdrop with an iOS-like ease, drags down to dismiss,
  * and eases its height when the content changes (a wizard moving from Review to PIN).
  * Tapping the backdrop or dragging past 100pt closes it; `onClose` runs once it is off screen.
  */
@@ -63,13 +64,15 @@ export function Sheet({
     });
 
   const panel = useAnimatedStyle(() => ({ transform: [{ translateY: y.value + drag.value }] }));
-  const backdrop = useAnimatedStyle(() => ({ opacity: 0.4 * (1 - Math.min(1, (y.value + drag.value) / 400)) }));
+  // The blur fades with the sheet: fully in when open, thinning out as it is dragged down.
+  const backdrop = useAnimatedStyle(() => ({ opacity: 1 - Math.min(1, (y.value + drag.value) / 400) }));
 
   return (
     <Modal transparent visible={mounted} animationType="none" statusBarTranslucent onRequestClose={close}>
       <GestureHandlerRootView style={styles.root}>
         <Animated.View style={[styles.backdrop, backdrop]}>
-          <Pressable style={styles.fill} onPress={close} />
+          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          <Pressable style={[styles.fill, styles.dim]} onPress={close} />
         </Animated.View>
         <GestureDetector gesture={pan}>
           <Animated.View style={[styles.panel, panel]} layout={LinearTransition.duration(260).easing(Easing.out(Easing.cubic))}>
@@ -87,7 +90,8 @@ export function Sheet({
 const styles = StyleSheet.create((theme, rt) => ({
   root: { flex: 1, justifyContent: "flex-end" },
   fill: { flex: 1 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000" },
+  backdrop: { ...StyleSheet.absoluteFillObject },
+  dim: { backgroundColor: "rgba(0, 0, 0, 0.1)" },
   panel: {
     paddingHorizontal: 16,
     paddingTop: 10,
