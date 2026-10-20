@@ -1,5 +1,5 @@
 import { Pressable, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText } from "@/components/ui";
@@ -40,7 +40,10 @@ export function Keypad({
   );
 }
 
-/** A soft disc fades in behind the key while it is held, like the iOS passcode pad. */
+/**
+ * A grey disc shows behind the key while it is held, like the iOS passcode pad. It appears
+ * instantly and lingers briefly on release, so even a quick tap visibly lands.
+ */
 function Key({ k, onKey }: { k: KeypadKey; onKey: (k: KeypadKey) => void }) {
   const { theme } = useUnistyles();
   const down = useSharedValue(0);
@@ -50,11 +53,11 @@ function Key({ k, onKey }: { k: KeypadKey; onKey: (k: KeypadKey) => void }) {
     <AnimatedPressable
       style={styles.key}
       onPressIn={() => {
-        down.set(withTiming(1, { duration: 60 }));
+        down.set(1);
         Haptics.selectionAsync().catch(() => {});
         onKey(k);
       }}
-      onPressOut={() => down.set(withTiming(0, { duration: 220 }))}
+      onPressOut={() => down.set(withDelay(60, withTiming(0, { duration: 250 })))}
     >
       <Animated.View style={[styles.disc, disc]} />
       {k === "del" ? (
@@ -75,10 +78,10 @@ const styles = StyleSheet.create((theme) => ({
   key: { width: 114, height: 64, alignItems: "center", justifyContent: "center" },
   disc: {
     position: "absolute",
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.surfaceMuted,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: theme.colors.fill.medium,
   },
   digit: { color: theme.palette.black },
 }));
