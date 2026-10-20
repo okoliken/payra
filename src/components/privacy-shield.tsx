@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, View } from "react-native";
+import { BlurView } from "expo-blur";
 import Animated, { FadeOut } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
 import { Logo } from "@/components/ui";
 
 /**
  * Banking-app privacy screen: as soon as the app stops being active (swiping up to the app
- * switcher, a notification pulled down, going home) a Brand/Secondary cover with the logo hides
- * balances and transactions, so they never show in the app-switcher snapshot. It appears with no
- * animation (iOS takes the snapshot right away) and fades out when the app is active again.
+ * switcher, a notification pulled down, going home) the screen is blurred under a light
+ * Brand/Secondary tint with the logo, so balances never show in the app-switcher snapshot. It
+ * appears with no animation (iOS takes the snapshot right away) and fades out on return.
  */
 export function PrivacyShield() {
   const [hidden, setHidden] = useState(AppState.currentState !== "active");
@@ -21,7 +22,9 @@ export function PrivacyShield() {
   if (!hidden) return null;
   return (
     <Animated.View exiting={FadeOut.duration(220)} style={styles.cover} pointerEvents="none">
-      <Logo size={56} onDark />
+      <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={styles.tint} />
+      <Logo size={56} />
     </Animated.View>
   );
 }
@@ -32,6 +35,7 @@ const styles = StyleSheet.create((theme) => ({
     zIndex: 1000,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.brandDark,
   },
+  // A wash of the brand green over the blur, so it reads as Payra rather than a generic blur.
+  tint: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.colors.brandDark, opacity: 0.12 },
 }));
