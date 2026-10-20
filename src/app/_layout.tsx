@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PrivacyShield } from '@/components/privacy-shield';
+import { endDeliveredActivities } from '../../modules/payra-activity';
 import { useUnistyles } from 'react-native-unistyles';
 import {
   PlusJakartaSans_400Regular,
@@ -27,6 +29,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) SplashScreen.hideAsync().catch(() => {});
   }, [loaded]);
+
+  // Payments that arrived while you were away no longer need their Live Activity.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') endDeliveredActivities().catch(() => {});
+    });
+    return () => sub.remove();
+  }, []);
 
   if (!loaded) return null;
 

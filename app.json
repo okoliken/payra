@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.okoli.payra"
+      "bundleIdentifier": "com.okoli.payra",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +39,15 @@
           "imageWidth": 120
         }
       ],
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Payra uses Face ID to unlock the app and confirm payments."
+        }
+      ],
+      "@bacons/apple-targets",
+      "./plugins/with-build-from-source"
     ],
     "experiments": {
       "typedRoutes": true,
