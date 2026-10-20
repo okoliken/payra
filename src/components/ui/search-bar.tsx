@@ -64,10 +64,11 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.stroke.soft,
   },
-  // Fill the bar's height: left to size itself, iOS gives the input a short box that clips the placeholder.
+  // A fixed text-sized box centred in the bar: left to size itself iOS clips the placeholder, and
+  // stretched to 48pt it places Plus Jakarta Sans low (tall ascenders), so it looks off-centre.
   input: {
     flex: 1,
-    alignSelf: 'stretch',
+    height: 24,
     paddingVertical: 0,
     fontFamily: theme.fonts.regular,
     fontSize: theme.typography.body.fontSize,
