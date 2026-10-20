@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { AppText, Header, IconCircle, Screen, SearchBar } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { ReviewSheet } from "@/components/review-sheet";
+import { EmptyState, SuccessMark } from "@/components/brand-marks";
 import { Tappable } from "@/components/tappable";
 import { formatMoney, initials } from "@/lib/format";
 import { EASE, fade, rise } from "@/lib/motion";
@@ -83,9 +84,7 @@ export default function SendToScreen() {
               </AppText>
               <Animated.View layout={layout} style={styles.list}>
                 {matches.length === 0 ? (
-                  <AppText variant="body" tone="secondary" align="center" style={styles.empty}>
-                    No one matches “{query.trim()}”
-                  </AppText>
+                  <EmptyState title={`No one matches “${query.trim()}”`} body="Try a name, phone or account number" />
                 ) : (
                   matches.map((b, i) => (
                     <Animated.View key={b.name} entering={fade()} exiting={FadeOut.duration(120)} layout={layout}>
@@ -138,7 +137,6 @@ type Lookup = { state: "idle" } | { state: "checking" } | { state: "found"; name
  * the number is long enough, the holder's name is looked up (pulsing placeholder → result).
  */
 function AccountTransfer({ number, onPick }: { number: string; onPick: (r: Recipient) => void }) {
-  const { theme } = useUnistyles();
   const [bank, setBank] = useState<Provider>();
   const ready = !!bank && number.length >= MIN_ACCOUNT;
   const key = ready ? `${bank.id}:${number}` : "";
@@ -212,9 +210,7 @@ function AccountTransfer({ number, onPick }: { number: string; onPick: (r: Recip
                   {bank!.name} · {number}
                 </AppText>
               </View>
-              <View style={styles.check}>
-                <AppIcon name="check" size={14} color={theme.colors.surfaceRaised} />
-              </View>
+              <SuccessMark width={28} />
             </Tappable>
           </Animated.View>
         ) : lookup.state === "checking" ? (
@@ -265,7 +261,6 @@ const styles = StyleSheet.create((theme, rt) => ({
   rowText: { flex: 1, gap: 6 },
   black: { color: theme.palette.black },
   badge: { position: "absolute", right: -2, bottom: -2, width: 20, height: 20 },
-  empty: { paddingVertical: 12 },
   banks: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   bank: {
     flexDirection: "row",
@@ -288,14 +283,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     padding: 18,
     borderRadius: 18,
     backgroundColor: theme.colors.surfaceRaised,
-  },
-  check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.success,
   },
   skCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: theme.colors.surfaceMuted },
   skBar: { height: 12, borderRadius: 6, backgroundColor: theme.colors.surfaceMuted },

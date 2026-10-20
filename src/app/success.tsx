@@ -6,6 +6,7 @@ import { StyleSheet } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Screen } from "@/components/ui";
 import { PayraLoader } from "@/components/payra-loader";
+import { SuccessMark } from "@/components/brand-marks";
 import { useGuardedRouter } from "@/lib/navigation";
 import { fade, rise } from "@/lib/motion";
 
@@ -13,14 +14,14 @@ import { fade, rise } from "@/lib/motion";
 const PROCESSING_MS = 1600;
 
 /**
- * Transfer / top-up result. It opens on a processing state (the Payra loader + one line, the way
- * banking apps hold the screen while a payment goes through), then cross-fades to the result: Figma
- * "Password Changed!" (348:1931) layout and illustration, 310×200 art, 32 above an H4 title and
- * Body copy, Primary "OK" 32 above the home indicator.
+ * Transfer / top-up result. It opens on a processing state (just the animated Payra mark, the way
+ * banking apps hold the screen while a payment goes through), then cross-fades to the result: our
+ * SuccessMark 32 above an H4 title and Body copy (Figma "Password Changed!" layout), Primary "OK"
+ * 32 above the home indicator.
  */
 export default function SuccessScreen() {
   const router = useGuardedRouter();
-  const { id, kind, title, body } = useLocalSearchParams<{ id?: string; kind?: "topup" | "transfer"; title: string; body: string }>();
+  const { id, title, body } = useLocalSearchParams<{ id?: string; kind?: "topup" | "transfer"; title: string; body: string }>();
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function SuccessScreen() {
     return (
       <Screen>
         <Animated.View exiting={FadeOut.duration(150)} style={styles.fill}>
-          <PayraLoader title={kind === "topup" ? "Adding money…" : "Sending money…"} subtitle="This will only take a moment" />
+          <PayraLoader />
         </Animated.View>
       </Screen>
     );
@@ -44,7 +45,7 @@ export default function SuccessScreen() {
   return (
     <Screen>
       <View style={styles.center}>
-        <Animated.Image entering={fade()} source={require("@/../assets/images/success-art.png")} style={styles.art} />
+        <SuccessMark width={140} />
         <Animated.View entering={rise(120)} style={styles.copy}>
           <AppText variant="h4" weight="semiBold" align="center">
             {title}
@@ -71,7 +72,6 @@ export default function SuccessScreen() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 32 },
-  art: { width: 310, height: 200 },
   cta: { gap: 12, marginBottom: 16 },
   copy: { gap: 8, alignSelf: "stretch" },
 });

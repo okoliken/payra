@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { AppText, Header, Screen, SearchBar, Segmented } from '@/components/ui';
 import { TransactionRow } from '@/components/transaction-row';
+import { EmptyState } from '@/components/brand-marks';
 import type { Transaction } from '@/data/mock';
 import { dayLabel } from '@/lib/format';
 import { useStore } from '@/store/app-store';
@@ -60,9 +61,7 @@ export default function HistoryScreen() {
       </View>
 
       {groups.length === 0 ? (
-        <AppText variant="body" tone="secondary" align="center" style={styles.empty}>
-          No transactions match.
-        </AppText>
+        <EmptyState title="No transactions found" body={query ? "Try a different name or filter" : "Money you send or receive shows up here"} />
       ) : (
         groups.map(([day, items]) => (
           <View key={day} style={styles.group}>
@@ -83,5 +82,4 @@ const styles = StyleSheet.create((theme) => ({
   titleBlock: { gap: theme.spacing.sm, marginBottom: theme.spacing.xxl },
   controls: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
   group: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
-  empty: { marginTop: theme.spacing.xxxl },
 }));

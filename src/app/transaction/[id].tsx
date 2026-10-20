@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Pressable, Share, TextInput, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import Svg, { Path } from "react-native-svg";
 import Animated, { useAnimatedProps, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
 import { AppText, Button, Header, Screen } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
+import { SuccessMark } from "@/components/brand-marks";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoneyWorklet } from "@/lib/format";
 import { EASE, fade, rise } from "@/lib/motion";
@@ -23,7 +23,6 @@ const copyText = (text: string) => {
   } catch {}
 };
 const AnimatedInput = Animated.createAnimatedComponent(TextInput);
-const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const methodFor = (tx: Transaction) =>
   tx.method ??
@@ -33,7 +32,7 @@ const reference = (tx: Transaction) => `PYR${tx.id.replace(/\D/g, "").slice(-10)
 
 /**
  * Not in Figma: the receipt for a transaction, built from the design system (B1 card, IconCircle
- * rhythm, Body / Caption type). On open the status check draws itself, the amount counts up and
+ * rhythm, Body / Caption type). On open our SuccessMark draws its check, the amount counts up and
  * the rows fade in one after another. The reference copies with a Copy → Copied cross-fade.
  */
 export default function TransactionDetailsScreen() {
@@ -97,7 +96,7 @@ export default function TransactionDetailsScreen() {
 
       <View style={styles.ticket}>
         <View style={styles.top}>
-          <StatusMark ok={tx.status === "Completed"} />
+          <SuccessMark width={72} />
           <Animated.View entering={fade(100)} style={styles.center}>
             <AppText variant="body" tone="secondary" align="center">
               {tx.title} {tx.status === "Completed" ? "Successful" : tx.status}
@@ -165,36 +164,6 @@ export default function TransactionDetailsScreen() {
   );
 }
 
-/** Green disc whose check mark draws itself (stroke dash offset) once the disc has faded in. */
-function StatusMark({ ok }: { ok: boolean }) {
-  const { theme } = useUnistyles();
-  const draw = useSharedValue(0);
-  useEffect(() => {
-    draw.value = withDelay(180, withTiming(1, { duration: 360, easing: EASE }));
-  }, [draw]);
-  const LENGTH = 26;
-  const checkProps = useAnimatedProps(() => ({ strokeDashoffset: LENGTH * (1 - draw.value) }));
-  const color = ok ? theme.colors.success : theme.colors.warning;
-  return (
-    <Animated.View entering={fade()} style={[styles.statusOuter, { backgroundColor: ok ? theme.colors.successSoft : theme.colors.warningSoft }]}>
-      <View style={[styles.statusInner, { backgroundColor: color }]}>
-        <Svg width={28} height={28} viewBox="0 0 28 28">
-          <AnimatedPath
-            d="M7 14.5 L12 19.5 L21 9.5"
-            stroke="#FFFFFF"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-            strokeDasharray={LENGTH}
-            animatedProps={checkProps}
-          />
-        </Svg>
-      </View>
-    </Animated.View>
-  );
-}
-
 /** Copy pill: copies, then cross-fades to a green "Copied" with a check for a moment. */
 function CopyPill({ text }: { text: string }) {
   const { theme } = useUnistyles();
@@ -233,8 +202,6 @@ const styles = StyleSheet.create((theme) => ({
   center: { alignItems: "center", gap: 6 },
   amountRow: { flexDirection: "row", alignItems: "center" },
   amount: { padding: 0, color: theme.colors.text, fontFamily: theme.fonts.bold, ...theme.typography.h2 },
-  statusOuter: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  statusInner: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   tear: { height: 24, justifyContent: "center" },
   notch: { position: "absolute", width: 24, height: 24, borderRadius: 12, backgroundColor: theme.colors.background },
   notchLeft: { left: -12 },
