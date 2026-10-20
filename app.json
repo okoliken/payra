@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.okoli.payra",
       "infoPlist": {
         "NSSupportsLiveActivities": true
-      }
+      },
+      "icon": "./assets/payra.icon"
     },
     "android": {
       "adaptiveIcon": {
