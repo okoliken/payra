@@ -40,12 +40,6 @@
         }
       ],
       "react-native-edge-to-edge",
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "Payra uses Face ID to unlock the app and confirm payments."
-        }
-      ],
       "@bacons/apple-targets",
       "./plugins/with-build-from-source"
     ],

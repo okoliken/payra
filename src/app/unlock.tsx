@@ -8,14 +8,12 @@ import { PayraLoader } from "@/components/payra-loader";
 import { PinPad } from "@/components/pin-pad";
 import { useGuardedRouter } from "@/lib/navigation";
 import { useStore } from "@/store/app-store";
-import { authenticate } from "@/lib/biometrics";
 
 /** How long "loading your account" shows after the PIN, like a real app fetching the balance. */
 const LOADING_MS = 1300;
 
 /**
- * Where the app opens once you are set up: Face ID, with Figma "Enter PIN" (338:1352) greeting
- * you by name underneath as the fallback.
+ * Where the app opens once you are set up: Figma "Enter PIN" (338:1352) greeting you by name.
  * After the PIN the Payra loader holds the screen while the account "loads", then Home.
  */
 export default function UnlockScreen() {
@@ -25,17 +23,6 @@ export default function UnlockScreen() {
 
   const onComplete = useCallback(() => setLoading(true), []);
 
-  // Face ID straight away; cancelling it ("Use PIN") leaves the PIN pad underneath.
-  useEffect(() => {
-    let live = true;
-    const t = setTimeout(async () => {
-      if ((await authenticate("Unlock Payra")) && live) setLoading(true);
-    }, 400);
-    return () => {
-      live = false;
-      clearTimeout(t);
-    };
-  }, []);
   useEffect(() => {
     if (!loading) return;
     const t = setTimeout(() => router.replace("/(tabs)"), LOADING_MS);

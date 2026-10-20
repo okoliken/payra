@@ -4,7 +4,6 @@ import { BlurView } from "expo-blur";
 import Animated, { FadeOut } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
 import { Logo } from "@/components/ui";
-import { isPromptingBiometrics } from "@/lib/biometrics";
 
 /**
  * Banking-app privacy screen: as soon as the app stops being active (swiping up to the app
@@ -16,10 +15,7 @@ export function PrivacyShield() {
   const [hidden, setHidden] = useState(AppState.currentState !== "active");
 
   useEffect(() => {
-    // Going inactive for our own Face ID prompt is not leaving the app, so it stays unblurred.
-    const sub = AppState.addEventListener("change", (state) =>
-      setHidden(state === "background" || (state === "inactive" && !isPromptingBiometrics())),
-    );
+    const sub = AppState.addEventListener("change", (state) => setHidden(state !== "active"));
     return () => sub.remove();
   }, []);
 

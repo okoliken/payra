@@ -11,7 +11,6 @@ import { formatMoney, initials } from "@/lib/format";
 import { fade } from "@/lib/motion";
 import { banks, recipientDetail, type Recipient } from "@/data/mock";
 import { useStore } from "@/store/app-store";
-import { authenticate } from "@/lib/biometrics";
 import { startPaymentActivity } from "../../modules/payra-activity";
 
 /** How long a transfer takes to "arrive" in the demo (drives the Live Activity ring). */
@@ -22,7 +21,7 @@ const TOP_UP_SOURCE = { provider: "BCA", account: "•••• 0190" };
 
 /**
  * The last two steps of a payment, in one sheet: Review (who, how much, fee, total) and then
- * Face ID, or Enter PIN if Face ID is cancelled or unavailable. Moving between them cross-fades the content while the sheet eases to its new
+ * Enter PIN. Moving between them cross-fades the content while the sheet eases to its new
  * height. A correct PIN (any 6 digits) records the transaction and opens the result screen.
  */
 export function ReviewSheet({
@@ -41,7 +40,6 @@ export function ReviewSheet({
   const { theme } = useUnistyles();
   const addTransaction = useStore((s) => s.addTransaction);
   const [step, setStep] = useState<"review" | "pin">("review");
-  const [authorising, setAuthorising] = useState(false);
   const money = formatMoney(amount);
   const topUp = !recipient;
   const logo = recipient?.channel === "Bank" ? banks.find((b) => b.name === recipient.provider)?.logo : undefined;
@@ -130,18 +128,7 @@ export function ReviewSheet({
             <Row label="Total" value={money} strong />
           </View>
 
-          <Button
-            title={topUp ? `Top Up ${money}` : `Send ${money}`}
-            loading={authorising}
-            onPress={async () => {
-              // Face ID first; cancelling ("Use PIN") or no Face ID falls back to the PIN step.
-              setAuthorising(true);
-              const ok = await authenticate(topUp ? `Confirm adding ${money}` : `Confirm sending ${money}`);
-              setAuthorising(false);
-              if (ok) confirm();
-              else setStep("pin");
-            }}
-          />
+          <Button title={topUp ? `Top Up ${money}` : `Send ${money}`} onPress={() => setStep("pin")} />
         </Animated.View>
       ) : (
         <Animated.View key="pin" entering={fade()} style={styles.step}>
