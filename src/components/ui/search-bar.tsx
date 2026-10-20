@@ -64,12 +64,13 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.stroke.soft,
   },
-  // A fixed text-sized box centred in the bar: left to size itself iOS clips the placeholder, and
-  // stretched to 48pt it places Plus Jakarta Sans low (tall ascenders), so it looks off-centre.
+  // Fills the bar's height so nothing clips (a shorter box clips the text once focused), and the
+  // bottom padding lifts it: iOS centres Plus Jakarta Sans by its metrics, which sits it ~2pt low.
   input: {
     flex: 1,
-    height: 24,
-    paddingVertical: 0,
+    alignSelf: 'stretch',
+    paddingTop: 0,
+    paddingBottom: 4,
     fontFamily: theme.fonts.regular,
     fontSize: theme.typography.body.fontSize,
     color: theme.colors.text,
