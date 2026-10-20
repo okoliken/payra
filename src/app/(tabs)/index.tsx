@@ -31,15 +31,13 @@ const payments: { label: string; icon: IconName }[] = [
   { label: "More", icon: "widget" },
 ];
 
-// Exported from the Figma carousel. It opens on the yellow banner (dot 1) with a dark one
-// peeking on each side, so the list is [slide 3, slide 1, slide 2] starting at index 1.
+// Promo banners exported from the Figma carousel, yellow one first as in the frame.
 const banners = [
-  require("@/../assets/images/promo-1.png"),
   require("@/../assets/images/promo-2.png"),
   require("@/../assets/images/promo-3.png"),
+  require("@/../assets/images/promo-1.png"),
 ];
 const BANNER_GAP = 6;
-const dotForIndex = (i: number) => (i + 2) % banners.length;
 
 const AnimatedInput = Animated.createAnimatedComponent(TextInput);
 Animated.addWhitelistedNativeProps({ text: true });
@@ -52,7 +50,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const bannerWidth = width - theme.spacing.gutter * 2;
   const bannerStep = bannerWidth + BANNER_GAP;
-  const scrollX = useSharedValue(bannerStep);
+  const scrollX = useSharedValue(0);
 
   // Changes made on other screens (a transfer) play out here once Home is back on screen:
   // the balance counts to its new value and the new transaction slides in at the top.
@@ -170,7 +168,6 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         snapToInterval={bannerStep}
         decelerationRate="fast"
-        initialScrollIndex={1}
         getItemLayout={(_, index) => ({ length: bannerStep, offset: bannerStep * index, index })}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -182,7 +179,7 @@ export default function HomeScreen() {
       />
       <View style={styles.dots}>
         {banners.map((_, dot) => (
-          <Dot key={dot} index={banners.findIndex((__, i) => dotForIndex(i) === dot)} step={bannerStep} scrollX={scrollX} />
+          <Dot key={dot} index={dot} step={bannerStep} scrollX={scrollX} />
         ))}
       </View>
 
