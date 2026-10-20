@@ -11,10 +11,7 @@ export type Transaction = {
   /** Receipt extras for transfers made in the app. */
   detail?: string; // e.g. "BCA · 1234567890"
   method?: string; // Payra Users, Bank, E-Wallet, Virtual Account, My Wallet
-  contactId?: string;
 };
-
-export type Contact = { id: string; name: string; phone: string; bank?: string; account?: string };
 
 export type Notification = {
   id: string;
@@ -79,27 +76,6 @@ export const transactions: Transaction[] = [
   { id: 't6', title: 'Electricity Bill', kind: 'bill', amount: -64.52, status: 'Completed', category: 'Prepaid', at: daysAgo(20, 19) },
   { id: 't7', title: 'Transfer', kind: 'received', amount: 80, status: 'Completed', category: 'Bima Andika', at: daysAgo(31, 11) },
 ];
-
-export const contacts: Contact[] = [
-  { id: 'c1', name: 'Aaliyah Putri', phone: '+62 812 3456 7812' },
-  { id: 'c2', name: 'Abigail Sari', phone: '+62 814 5678 9034' },
-  { id: 'c3', name: 'Ava Bella', phone: '+62 816 7890 1256' },
-  { id: 'c4', name: 'Bima Andika', phone: '+62 817 8901 2367' },
-  { id: 'c5', name: 'Bella Amanda', phone: '+62 818 9012 3478' },
-  { id: 'c6', name: 'Brandon Arya', phone: '+62 819 0123 4589' },
-  { id: 'c7', name: 'Brianna Citra', phone: '+62 821 2345 5690' },
-  { id: 'c8', name: 'Brillia Aresta', phone: '+62 831 4347 7680' },
-  { id: 'c9', name: 'Chandra Wijaya', phone: '+62 838 1122 3344' },
-  { id: 'c10', name: 'Dewi Lestari', phone: '+62 852 9988 7766' },
-];
-
-export const frequentTransfers: Contact[] = [
-  { id: 'f1', name: 'John Doe', phone: '', bank: 'Mandiri', account: '1122334455667' },
-];
-
-/** Anyone money can be sent to: the contact list plus frequent transfers. */
-export const findContact = (id?: string) =>
-  [...contacts, ...frequentTransfers].find((c) => c.id === id) ?? contacts[0]!;
 
 export const notifications: Notification[] = [
   { id: 'n1', title: 'New Login Detected', body: 'We noticed a login from a new device.', kind: 'security', at: hoursAgo(0.2), read: false },
@@ -225,3 +201,32 @@ export const lookupAccount = (number: string) => {
   for (const ch of number) hash = (hash * 31 + ch.charCodeAt(0)) % 9973;
   return accountHolders[hash % accountHolders.length]!;
 };
+
+/** Who money goes to. Payra users are reached by phone; everyone else by bank account. */
+export type Recipient = {
+  name: string;
+  channel: "Payra" | "Bank";
+  /** Bank name for bank accounts (BCA, Mandiri…). */
+  provider?: string;
+  /** Phone number for Payra users, account number for banks. */
+  account: string;
+};
+
+export const recipientDetail = (r: Recipient) =>
+  r.channel === "Payra" ? `Payra · ${r.account}` : `${r.provider} · ${r.account}`;
+
+/** Saved recipients: the contacts on Payra, plus a few saved bank accounts. */
+export const beneficiaries: Recipient[] = [
+  { name: "John Doe", channel: "Bank", provider: "Mandiri", account: "1122334455667" },
+  { name: "Aaliyah Putri", channel: "Payra", account: "+62 812 3456 7812" },
+  { name: "Abigail Sari", channel: "Bank", provider: "BCA", account: "0912345678" },
+  { name: "Ava Bella", channel: "Payra", account: "+62 816 7890 1256" },
+  { name: "Bima Andika", channel: "Bank", provider: "BRI", account: "3301298877665" },
+  { name: "Bella Amanda", channel: "Payra", account: "+62 818 9012 3478" },
+  { name: "Brandon Arya", channel: "Payra", account: "+62 819 0123 4589" },
+  { name: "Brianna Citra", channel: "Bank", provider: "BNI", account: "0449988776" },
+  { name: "Chandra Wijaya", channel: "Payra", account: "+62 838 1122 3344" },
+  { name: "Dewi Lestari", channel: "Bank", provider: "Mandiri", account: "1400099887766" },
+];
+
+export const banks = providers.Bank;

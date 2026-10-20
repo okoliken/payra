@@ -28,7 +28,7 @@ export default function LaunchScreen() {
         useStore.getState().signIn();
         return router.replace(DEV_ROUTE as never);
       }
-      router.replace(signedIn ? '/(tabs)' : '/onboarding');
+      router.replace(signedIn ? '/unlock' : '/onboarding');
     }, 1100);
     return () => clearTimeout(timer);
   }, [hydrated, signedIn, router]);

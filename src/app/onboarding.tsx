@@ -27,9 +27,9 @@ export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
 
   const finish = () => {
-    // The demo skips sign-up: onboarding leads straight into the app.
+    // The demo skips sign-up: onboarding leads straight to the PIN, then the app.
     signIn();
-    router.replace('/(tabs)');
+    router.replace('/unlock');
   };
 
   const goTo = (i: number) => listRef.current?.scrollToIndex({ index: i, animated: true });

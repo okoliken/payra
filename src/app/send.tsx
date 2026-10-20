@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
-  FadeIn,
   FadeOut,
   LinearTransition,
   interpolateColor,
@@ -13,46 +12,33 @@ import Animated, {
 } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
-import { AppText, Button, Header, IconCircle, Screen } from "@/components/ui";
-import { AppIcon } from "@/components/app-icon";
+import { AppText, Button, Header, Screen } from "@/components/ui";
 import { Keypad, type KeypadKey } from "@/components/keypad";
+import { ReviewSheet } from "@/components/review-sheet";
 import { useGuardedRouter } from "@/lib/navigation";
-import { formatMoney, initials } from "@/lib/format";
-import { findContact } from "@/data/mock";
-import { EASE, SHAKE, rise } from "@/lib/motion";
+import { formatMoney } from "@/lib/format";
+import { EASE, SHAKE, fade, rise } from "@/lib/motion";
+import { recipientDetail, type Recipient } from "@/data/mock";
 import { useStore } from "@/store/app-store";
 
-
 /**
- * Not in the Figma file: the step between Select Contact and Enter PIN, built from the file's
- * own parts (contact row, PIN keypad, Primary button). Each digit drops in as it is typed; going
- * over the balance turns the amount red, shakes it on every key (and on Continue) and says why. `mode=topup` adds money to your own wallet
- * instead (Transfer's "Add" and Home's +), so there is no balance limit.
+ * Step 1 of sending: the amount. Continue goes to "Send to" (who); a top-up (`mode=topup`) or a
+ * repeat payment from a receipt (recipient params) already knows who, so it opens Review directly.
+ * Going over the balance turns the amount red, shakes it with an error haptic and says why.
  */
-export default function SendAmountScreen() {
+export default function SendScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  // Recipient: a contact (`contactId`), an account looked up on /recipient (`name` + `detail`),
-  // or your own wallet (`mode=topup`).
-  const params = useLocalSearchParams<{
-    contactId?: string;
-    name?: string;
-    detail?: string;
-    via?: string;
-    mode?: "topup";
-  }>();
-  const { contactId, via, mode } = params;
+  const params = useLocalSearchParams<{ mode?: "topup"; name?: string; channel?: "Payra" | "Bank"; provider?: string; account?: string }>();
   const balance = useStore((s) => s.balance);
-  const topUp = mode === "topup";
-  const contact = contactId ? findContact(contactId) : undefined;
-  const name = topUp ? "My Wallet" : (contact?.name ?? params.name ?? "");
-  const detail = topUp
-    ? "Transfer funds to your own wallet instantly and securely"
-    : contact
-      ? [via, contact.account ?? contact.phone].filter(Boolean).join(" · ")
-      : (params.detail ?? "");
-  const [raw, setRaw] = useState("");
+  const topUp = params.mode === "topup";
+  const known: Recipient | undefined =
+    params.name && params.channel && params.account
+      ? { name: params.name, channel: params.channel, provider: params.provider, account: params.account }
+      : undefined;
 
+  const [raw, setRaw] = useState("");
+  const [review, setReview] = useState(false);
   const amount = Number(raw) || 0;
   const over = !topUp && amount > balance;
   const shake = useSharedValue(0);
@@ -91,28 +77,22 @@ export default function SendAmountScreen() {
     color: interpolateColor(red.value, [0, 1], [theme.colors.text, theme.colors.danger]),
   }));
 
+  const onContinue = () => {
+    if (over) return reject();
+    if (topUp || known) return setReview(true);
+    router.push({ pathname: "/send-to", params: { amount: String(amount) } });
+  };
+
   return (
     <Screen>
-      <Header title={topUp ? "Top Up" : "Transfer"} />
-      <View style={styles.recipient}>
-        <IconCircle>
-          {topUp ? (
-            <AppIcon name="wallet-money-bold" size={24} color={theme.colors.text} />
-          ) : (
-            <AppText variant="captionL" weight="semiBold" style={styles.black}>
-              {initials(name)}
-            </AppText>
-          )}
-        </IconCircle>
-        <View style={styles.recipientText}>
-          <AppText variant="body" weight="semiBold">
-            {name}
+      <Header title={topUp ? "Top Up" : "Send Money"} />
+      {known ? (
+        <Animated.View entering={fade()} style={styles.to}>
+          <AppText variant="captionL" tone="secondary" align="center">
+            To {known.name} · {recipientDetail(known)}
           </AppText>
-          <AppText variant="captionL" tone="secondary">
-            {detail}
-          </AppText>
-        </View>
-      </View>
+        </Animated.View>
+      ) : null}
 
       <View style={styles.center}>
         <Animated.View style={[styles.amount, amountStyle]}>
@@ -128,7 +108,7 @@ export default function SendAmountScreen() {
             </Animated.Text>
           ))}
         </Animated.View>
-        <Animated.View key={over ? "over" : "ok"} entering={FadeIn.duration(180)}>
+        <Animated.View key={over ? "over" : "ok"} entering={fade()}>
           <AppText variant="captionL" weight={over ? "semiBold" : "regular"} tone={over ? "danger" : "secondary"} align="center">
             {over ? `Insufficient balance · You have ${formatMoney(balance)}` : `Your Balance ${formatMoney(balance)}`}
           </AppText>
@@ -136,37 +116,15 @@ export default function SendAmountScreen() {
       </View>
 
       <Keypad decimal onKey={onKey} />
-      <Button
-        title="Continue"
-        style={styles.cta}
-        disabled={amount <= 0}
-        haptic={!over}
-        onPress={() =>
-          over
-            ? reject()
-            : router.push({
-                pathname: "/pin",
-                params: topUp
-                  ? { mode, amount: String(amount) }
-                  : { amount: String(amount), name, detail, via: via ?? "Payra Users", ...(contactId ? { contactId } : {}) },
-              })
-        }
-      />
+      <Button title="Continue" style={styles.cta} disabled={amount <= 0} haptic={!over} onPress={onContinue} />
+
+      <ReviewSheet visible={review} onClose={() => setReview(false)} amount={amount} recipient={known} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  recipient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surfaceRaised,
-  },
-  black: { color: theme.palette.black },
-  recipientText: { flex: 1, gap: 6 },
+  to: { marginTop: -8 },
   center: { flex: 1, justifyContent: "center", gap: 8 },
   amount: { flexDirection: "row", justifyContent: "center" },
   char: { fontFamily: theme.fonts.bold, ...theme.typography.display },

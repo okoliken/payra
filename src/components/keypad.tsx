@@ -11,9 +11,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * Figma "Enter PIN" keypad: 3 columns of 114×64 keys, 12 apart, rows 32 apart; digits Heading/H3/Bold,
- * backspace 28pt. `decimal` puts a "." in the empty bottom-left slot (amount entry).
+ * backspace 28pt. `decimal` puts a "." in the empty bottom-left slot (amount entry); `compact`
+ * tightens the rows to fit inside a sheet.
  */
-export function Keypad({ onKey, decimal = false }: { onKey: (k: KeypadKey) => void; decimal?: boolean }) {
+export function Keypad({
+  onKey,
+  decimal = false,
+  compact = false,
+}: {
+  onKey: (k: KeypadKey) => void;
+  decimal?: boolean;
+  compact?: boolean;
+}) {
   const rows: (KeypadKey | null)[][] = [
     ["1", "2", "3"],
     ["4", "5", "6"],
@@ -21,7 +30,7 @@ export function Keypad({ onKey, decimal = false }: { onKey: (k: KeypadKey) => vo
     [decimal ? "." : null, "0", "del"],
   ];
   return (
-    <View style={styles.pad}>
+    <View style={[styles.pad, compact && styles.padCompact]}>
       {rows.map((row, r) => (
         <View key={r} style={styles.row}>
           {row.map((k, c) => (k ? <Key key={k} k={k} onKey={onKey} /> : <View key={`empty-${c}`} style={styles.key} />))}
@@ -61,6 +70,7 @@ function Key({ k, onKey }: { k: KeypadKey; onKey: (k: KeypadKey) => void }) {
 
 const styles = StyleSheet.create((theme) => ({
   pad: { gap: 32 },
+  padCompact: { gap: 8 },
   row: { flexDirection: "row", gap: 12 },
   key: { width: 114, height: 64, alignItems: "center", justifyContent: "center" },
   disc: {

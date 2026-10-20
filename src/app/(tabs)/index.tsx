@@ -124,7 +124,7 @@ export default function HomeScreen() {
           <View style={styles.actions}>
             <Pressable
               style={[styles.action, styles.actionIcon, styles.actionAdd]}
-              onPress={() => router.push({ pathname: "/send-amount", params: { mode: "topup" } })}
+              onPress={() => router.push({ pathname: "/send", params: { mode: "topup" } })}
             >
               <AppIcon name="add" size={16} color={theme.colors.brandDark} />
             </Pressable>
@@ -134,7 +134,7 @@ export default function HomeScreen() {
                 Request
               </AppText>
             </Pressable>
-            <Pressable style={styles.action} onPress={() => router.push("/transfer")}>
+            <Pressable style={styles.action} onPress={() => router.push("/send")}>
               <AppIcon name="arrow-right-up" size={16} color={theme.colors.surfaceRaised} />
               <AppText variant="captionL" weight="semiBold" style={styles.onCard}>
                 Transfer

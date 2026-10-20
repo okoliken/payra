@@ -72,20 +72,24 @@ export default function TransactionDetailsScreen() {
     { label: "Fee", value: "Free", good: true },
     { label: "Total", value: amount },
   ];
-  const canRepeat = tx.kind === "sent" && tx.method !== undefined;
+  const canRepeat = tx.kind === "sent" && !!tx.detail;
 
   const share = () =>
     Share.share({
       message: [`Payra receipt · ${tx.status}`, `${tx.title}: ${amount}`, ...rows.map((r) => `${r.label}: ${r.value}`), when].join("\n"),
     }).catch(() => {});
 
-  const sendAgain = () =>
+  // Detail is "BCA · 0912345678" for banks and "Payra · +62 …" for Payra users.
+  const sendAgain = () => {
+    const [provider, account = ""] = (tx.detail ?? "").split(" · ");
     router.push({
-      pathname: "/send-amount",
-      params: tx.contactId
-        ? { contactId: tx.contactId, via: tx.method ?? "Payra Users" }
-        : { name: tx.category, detail: tx.detail ?? "", via: tx.method ?? "Payra Users" },
+      pathname: "/send",
+      params:
+        tx.method === "Bank"
+          ? { name: tx.category, channel: "Bank", provider, account }
+          : { name: tx.category, channel: "Payra", account },
     });
+  };
 
   return (
     <Screen scroll>
