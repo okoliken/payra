@@ -8,7 +8,7 @@ import { AppText, Header, Screen, SearchBar } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { ReviewSheet } from "@/components/review-sheet";
 import { EmptyState, SuccessMark } from "@/components/brand-marks";
-import { Tappable } from "@/components/tappable";
+import { Tappable } from "@okoli/ui";
 import { PersonAvatar } from "@/components/person-avatar";
 import { DEMO_HOOKS } from "@/lib/demo";
 import { formatMoney } from "@/lib/format";

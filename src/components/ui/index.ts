@@ -1,5 +1,5 @@
 export { AppText } from './text';
-export { Button } from './button';
+export { Button } from '@okoli/ui';
 export { Card } from './card';
 export { Screen } from './screen';
 export { IconButton } from './icon-button';

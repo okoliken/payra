@@ -9,7 +9,8 @@
       "@/assets/*": [
         "./assets/*"
       ]
-    }
+    },
+    "preserveSymlinks": true
   },
   "include": [
     "**/*.ts",

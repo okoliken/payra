@@ -278,7 +278,7 @@ const styles = StyleSheet.create((theme) => ({
   partyDetail: { flexShrink: 1, maxWidth: "45%" },
   totals: { gap: 12, padding: 14, borderRadius: 16, backgroundColor: theme.colors.background },
   amountRow: { flexDirection: "row", alignItems: "center" },
-  amount: { padding: 0, color: theme.colors.text, fontFamily: theme.fonts.bold, ...theme.typography.h2 },
+  amount: { padding: 0, color: theme.colors.text, ...theme.fonts.bold, ...theme.typography.h2 },
   tear: { height: 24, justifyContent: "center" },
   notch: { position: "absolute", width: 24, height: 24, borderRadius: 12, backgroundColor: theme.colors.background },
   notchLeft: { left: -12 },

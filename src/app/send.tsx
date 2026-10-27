@@ -153,7 +153,7 @@ const styles = StyleSheet.create((theme) => ({
   to: { marginTop: -8 },
   center: { flex: 1, justifyContent: "center", gap: 8 },
   amount: { flexDirection: "row", justifyContent: "center" },
-  char: { fontFamily: theme.fonts.bold, ...theme.typography.display },
+  char: { ...theme.fonts.bold, ...theme.typography.display },
   placeholder: { color: theme.colors.textQuaternary },
   cta: { marginTop: 32 },
 }));

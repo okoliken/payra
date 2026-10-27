@@ -84,12 +84,13 @@ export const palette = {
 const ink = (alpha: number) => `rgba(24, 24, 27, ${alpha})`;
 const paper = (alpha: number) => `rgba(250, 250, 250, ${alpha})`;
 
+/** Spread into a style (`...theme.fonts.bold`); the @okoli/ui theme contract keeps fonts as style objects. */
 export const fonts = {
-  regular: "PlusJakartaSans_400Regular",
-  medium: "PlusJakartaSans_500Medium",
-  semiBold: "PlusJakartaSans_600SemiBold",
-  bold: "PlusJakartaSans_700Bold",
-} as const;
+  regular: { fontFamily: "PlusJakartaSans_400Regular" },
+  medium: { fontFamily: "PlusJakartaSans_500Medium" },
+  semiBold: { fontFamily: "PlusJakartaSans_600SemiBold" },
+  bold: { fontFamily: "PlusJakartaSans_700Bold" },
+};
 
 export const typography = {
   display: { fontSize: 36, lineHeight: 44 },
@@ -124,6 +125,8 @@ export const radius = {
   lg: 16,
   xl: 20,
   xxl: 24,
+  /** Top corners of bottom sheets. */
+  sheet: 28,
   pill: 999,
 } as const;
 
@@ -131,7 +134,15 @@ export type ThemeName = "light" | "dark";
 
 export const lightTheme = {
   name: "light" as ThemeName,
+  dark: false,
   colors: {
+    // @okoli/ui roles, mapped onto the Payra brand.
+    primary: palette.brand.primary,
+    onPrimary: palette.brand.secondary,
+    secondary: palette.brand.secondary,
+    onSecondary: palette.white,
+    scrim: "rgba(0, 0, 0, 0.1)",
+
     brand: palette.brand.primary,
     brandDark: palette.brand.secondary,
     onBrand: palette.brand.secondary,
@@ -161,12 +172,16 @@ export const lightTheme = {
 
     success: palette.green.default,
     successSoft: palette.green.fill,
+    onSuccess: palette.white,
     warning: palette.yellow.default,
     warningSoft: palette.yellow.fill,
+    onWarning: "#422006",
     danger: palette.red.default,
     dangerSoft: palette.red.fill,
+    onDanger: palette.white,
     info: palette.blue.default,
     infoSoft: palette.blue.fill,
+    onInfo: palette.white,
 
     tabBar: palette.brand.secondary,
     tabBarActive: palette.brand.primary,
@@ -181,6 +196,7 @@ export const lightTheme = {
 export const darkTheme: typeof lightTheme = {
   ...lightTheme,
   name: "dark",
+  dark: true,
   colors: {
     ...lightTheme.colors,
     onBrand: palette.brand.secondary,

@@ -19,7 +19,7 @@ import * as Haptics from "expo-haptics";
 import { AppText, IconCircle, Logo, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
 import { TransactionRow } from "@/components/transaction-row";
-import { Tappable } from "@/components/tappable";
+import { Tappable } from "@okoli/ui";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoney, formatMoneyWorklet } from "@/lib/format";
 import { useStore } from "@/store/app-store";
@@ -372,7 +372,7 @@ const styles = StyleSheet.create((theme) => ({
   balance: {
     padding: 0,
     color: theme.colors.surfaceRaised,
-    fontFamily: theme.fonts.bold,
+    ...theme.fonts.bold,
     ...theme.typography.h2,
   },
   eye: {

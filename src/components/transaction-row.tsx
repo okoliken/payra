@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Tappable } from '@/components/tappable';
+import { Tappable } from '@okoli/ui';
 import { useGuardedRouter } from '@/lib/navigation';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { AppText, IconCircle } from '@/components/ui';
