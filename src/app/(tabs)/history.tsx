@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { AppText, Header, Screen, SearchBar, Segmented } from '@/components/ui';
+import { AppText, Screen, SearchBar, Segmented } from '@/components/ui';
 import { TransactionRow } from '@/components/transaction-row';
 import { EmptyState } from '@/components/brand-marks';
 import type { Transaction } from '@/data/mock';
@@ -37,7 +37,6 @@ export default function HistoryScreen() {
 
   return (
     <Screen scroll tabBarInset>
-      <Header title="History" />
       <View style={styles.titleBlock}>
         <AppText variant="h4" weight="semiBold">
           Transactions History
@@ -79,7 +78,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  titleBlock: { gap: theme.spacing.sm, marginBottom: theme.spacing.xxl },
+  titleBlock: { gap: theme.spacing.sm, marginTop: theme.spacing.lg, marginBottom: theme.spacing.xxl },
   controls: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
   group: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
 }));

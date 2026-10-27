@@ -1,20 +1,21 @@
 import { useCallback, useState } from "react";
-import { Image, View } from "react-native";
+import { View } from "react-native";
 import Animated from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { AppText, Button, IconCircle } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { PinPad } from "@/components/pin-pad";
+import { PersonAvatar } from "@/components/person-avatar";
 import { Sheet } from "@/components/sheet";
 import { useGuardedRouter } from "@/lib/navigation";
-import { formatMoney, initials } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { fade } from "@/lib/motion";
-import { banks, recipientDetail, type Recipient } from "@/data/mock";
+import { recipientDetail, type Recipient } from "@/data/mock";
 import { useStore } from "@/store/app-store";
 import { startPaymentActivity } from "../../modules/payra-activity";
 
 /** How long a transfer takes to "arrive" in the demo (drives the Live Activity ring). */
-const DELIVERY_SECONDS = 12;
+const DELIVERY_SECONDS = 5;
 
 /** Where top-ups are pulled from in the demo. */
 const TOP_UP_SOURCE = { provider: "BCA", account: "•••• 0190" };
@@ -42,7 +43,6 @@ export function ReviewSheet({
   const [step, setStep] = useState<"review" | "pin">("review");
   const money = formatMoney(amount);
   const topUp = !recipient;
-  const logo = recipient?.channel === "Bank" ? banks.find((b) => b.name === recipient.provider)?.logo : undefined;
 
   const close = () => {
     onClose();
@@ -100,17 +100,13 @@ export function ReviewSheet({
 
           <View style={styles.card}>
             <View style={styles.party}>
-              <IconCircle>
-                {topUp ? (
+              {topUp ? (
+                <IconCircle>
                   <AppIcon name="wallet-money-bold" size={24} color={theme.colors.text} />
-                ) : logo ? (
-                  <Image source={logo} style={styles.logo} />
-                ) : (
-                  <AppText variant="captionL" weight="semiBold" style={styles.black}>
-                    {initials(recipient.name)}
-                  </AppText>
-                )}
-              </IconCircle>
+                </IconCircle>
+              ) : (
+                <PersonAvatar name={recipient.name} provider={recipient.provider} />
+              )}
               <View style={styles.partyText}>
                 <AppText variant="body" weight="semiBold">
                   {topUp ? "From" : recipient.name}
@@ -166,8 +162,6 @@ const styles = StyleSheet.create((theme) => ({
   card: { gap: 14, padding: 18, borderRadius: 24, backgroundColor: theme.colors.surfaceRaised },
   party: { flexDirection: "row", alignItems: "center", gap: 12 },
   partyText: { flex: 1, gap: 4 },
-  logo: { width: 40, height: 40 },
-  black: { color: theme.palette.black },
   divider: { height: 1, backgroundColor: theme.colors.stroke.soft },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   pinCopy: { gap: 6, marginBottom: 8 },

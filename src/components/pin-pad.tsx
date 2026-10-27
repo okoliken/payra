@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } 
 import { StyleSheet } from "react-native-unistyles";
 import { Keypad, type KeypadKey } from "@/components/keypad";
 import { SHAKE } from "@/lib/motion";
+import { DEMO_HOOKS } from "@/lib/demo";
 
 export const PIN_LENGTH = 6;
 
@@ -11,8 +12,23 @@ export const PIN_LENGTH = 6;
  * Figma "Enter PIN" dots + keypad. Calls `onComplete` once the sixth digit is in and ignores
  * further keys; any PIN passes in the demo. Deleting on an empty PIN shakes the dots.
  */
-export function PinPad({ onComplete, compact = false }: { onComplete: (pin: string) => void; compact?: boolean }) {
+export function PinPad({
+  onComplete,
+  compact = false,
+  autoType = false,
+}: {
+  onComplete: (pin: string) => void;
+  compact?: boolean;
+  /** Dev-only (demo tour): types a PIN by itself. */
+  autoType?: boolean;
+}) {
   const [pin, setPin] = useState("");
+
+  useEffect(() => {
+    if (!DEMO_HOOKS || !autoType) return;
+    const ts = "246810".split("").map((d, i) => setTimeout(() => setPin((p) => (p.length < PIN_LENGTH ? p + d : p)), 700 + i * 220));
+    return () => ts.forEach(clearTimeout);
+  }, [autoType]);
   const shake = useSharedValue(0);
   const complete = pin.length === PIN_LENGTH;
 

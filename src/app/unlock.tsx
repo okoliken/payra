@@ -6,8 +6,10 @@ import * as Haptics from "expo-haptics";
 import { AppText, Screen } from "@/components/ui";
 import { PayraLoader } from "@/components/payra-loader";
 import { PinPad } from "@/components/pin-pad";
+import { useLocalSearchParams } from "expo-router";
 import { useGuardedRouter } from "@/lib/navigation";
 import { useStore } from "@/store/app-store";
+import { DEMO_HOOKS } from "@/lib/demo";
 
 /** How long "loading your account" shows after the PIN, like a real app fetching the balance. */
 const LOADING_MS = 1300;
@@ -18,6 +20,7 @@ const LOADING_MS = 1300;
  */
 export default function UnlockScreen() {
   const router = useGuardedRouter();
+  const { demoPin } = useLocalSearchParams<{ demoPin?: string }>();
   const { user, signOut } = useStore();
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +51,7 @@ export default function UnlockScreen() {
             Please enter your 6-digits PIN
           </AppText>
         </View>
-        <PinPad onComplete={onComplete} />
+        <PinPad onComplete={onComplete} autoType={DEMO_HOOKS && demoPin === "1"} />
         <View style={styles.footer}>
           <Pressable hitSlop={8} onPress={() => Haptics.selectionAsync().catch(() => {})}>
             <AppText variant="body" weight="semiBold" style={styles.link}>

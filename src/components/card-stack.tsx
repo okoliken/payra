@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import * as Haptics from 'expo-haptics';
 import { BankCard } from '@/components/bank-card';
 import type { Card } from '@/data/mock';
+import { DEMO_HOOKS } from "@/lib/demo";
 
 /** Figma "My Wallet": the back card's top 62.22pt shows above the 200pt front card. */
 const CARD_HEIGHT = 200;
@@ -101,7 +102,7 @@ export function CardStack({ cards }: { cards: Card[] }) {
 
   // Dev-only: `payra://wallet?demoSwipe=1` advances the stack on a timer so the motion can be recorded.
   useEffect(() => {
-    if (!__DEV__ || !demoSwipe || count < 2) return;
+    if (!DEMO_HOOKS || !demoSwipe || count < 2) return;
     const t = setInterval(() => runOnUI(flyOut)(1), 1500);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -4,12 +4,14 @@ import { useLocalSearchParams } from "expo-router";
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
-import { AppText, Header, IconCircle, Screen, SearchBar } from "@/components/ui";
+import { AppText, Header, Screen, SearchBar } from "@/components/ui";
 import { AppIcon } from "@/components/app-icon";
 import { ReviewSheet } from "@/components/review-sheet";
 import { EmptyState, SuccessMark } from "@/components/brand-marks";
 import { Tappable } from "@/components/tappable";
-import { formatMoney, initials } from "@/lib/format";
+import { PersonAvatar } from "@/components/person-avatar";
+import { DEMO_HOOKS } from "@/lib/demo";
+import { formatMoney } from "@/lib/format";
 import { EASE, fade, rise } from "@/lib/motion";
 import { banks, beneficiaries, lookupAccount, recipientDetail, type Provider, type Recipient } from "@/data/mock";
 import { useStore } from "@/store/app-store";
@@ -24,11 +26,38 @@ const layout = LinearTransition.duration(220).easing(EASE);
  */
 export default function SendToScreen() {
   const { theme } = useUnistyles();
-  const { amount: rawAmount } = useLocalSearchParams<{ amount: string }>();
+  const { amount: rawAmount, demoPick, demoQuery, demoAccount, demoBank } = useLocalSearchParams<{
+    amount: string;
+    demoPick?: string;
+    demoQuery?: string;
+    demoAccount?: string;
+    demoBank?: string;
+  }>();
   const amount = Number(rawAmount) || 0;
   const transactions = useStore((s) => s.transactions);
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Recipient>();
+  // Dev-only (demo tour): types `demoAccount` (a bank number, looked up once `demoBank` is
+  // chosen), clears it, types `demoQuery` a letter at a time, clears that, then opens Review for
+  // the `demoPick` beneficiary.
+  useEffect(() => {
+    if (!DEMO_HOOKS || (!demoPick && !demoQuery && !demoAccount)) return;
+    const ts: ReturnType<typeof setTimeout>[] = [];
+    let at = 1300;
+    const type = (text: string, gap: number, hold: number) => {
+      text.split("").forEach((_, i) => {
+        ts.push(setTimeout(() => setQuery(text.slice(0, i + 1)), at));
+        at += gap;
+      });
+      at += hold;
+      ts.push(setTimeout(() => setQuery(""), at));
+      at += 900;
+    };
+    if (demoAccount) type(demoAccount, 140, 4200);
+    if (demoQuery) type(demoQuery, 260, 1300);
+    if (demoPick) ts.push(setTimeout(() => setPicked(beneficiaries.find((b) => b.name === demoPick)), at));
+    return () => ts.forEach(clearTimeout);
+  }, [demoPick, demoQuery, demoAccount]);
 
   const digits = query.replace(/[\s-]/g, "");
   const isAccount = /^\d{4,}$/.test(digits);
@@ -57,7 +86,7 @@ export default function SendToScreen() {
 
       <ScrollView style={styles.fill} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {isAccount ? (
-          <AccountTransfer key="account" number={digits} onPick={setPicked} />
+          <AccountTransfer key="account" number={digits} onPick={setPicked} demoBank={demoBank} />
         ) : (
           <Animated.View key="people" entering={fade()} layout={layout} style={styles.sections}>
             {!q ? (
@@ -68,7 +97,7 @@ export default function SendToScreen() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recent}>
                   {recent.map((r) => (
                     <Tappable key={r.name} style={styles.recentItem} accessibilityLabel={`Send to ${r.name}`} onPress={() => setPicked(r)}>
-                      <Avatar recipient={r} />
+                      <PersonAvatar name={r.name} provider={r.provider} />
                       <AppText variant="captionL" numberOfLines={1}>
                         {r.name.split(" ")[0]}
                       </AppText>
@@ -90,7 +119,7 @@ export default function SendToScreen() {
                     <Animated.View key={b.name} entering={fade()} exiting={FadeOut.duration(120)} layout={layout}>
                       {i > 0 ? <View style={styles.divider} /> : null}
                       <Tappable style={styles.row} accessibilityLabel={`${b.name}, ${recipientDetail(b)}`} onPress={() => setPicked(b)}>
-                        <Avatar recipient={b} />
+                        <PersonAvatar name={b.name} provider={b.provider} />
                         <View style={styles.rowText}>
                           <AppText variant="body" weight="semiBold">
                             {b.name}
@@ -115,29 +144,20 @@ export default function SendToScreen() {
   );
 }
 
-/** Initials in the Figma double circle; bank accounts carry a small bank badge. */
-function Avatar({ recipient }: { recipient: Recipient }) {
-  const logo = recipient.channel === "Bank" ? banks.find((b) => b.name === recipient.provider)?.logo : undefined;
-  return (
-    <View>
-      <IconCircle>
-        <AppText variant="captionL" weight="semiBold" style={styles.black}>
-          {initials(recipient.name)}
-        </AppText>
-      </IconCircle>
-      {logo ? <Image source={logo} style={styles.badge} /> : null}
-    </View>
-  );
-}
-
 type Lookup = { state: "idle" } | { state: "checking" } | { state: "found"; name: string };
 
 /**
  * Account-number wizard: suggested banks fade in under the field, then once a bank is chosen and
  * the number is long enough, the holder's name is looked up (pulsing placeholder → result).
  */
-function AccountTransfer({ number, onPick }: { number: string; onPick: (r: Recipient) => void }) {
+function AccountTransfer({ number, onPick, demoBank }: { number: string; onPick: (r: Recipient) => void; demoBank?: string }) {
   const [bank, setBank] = useState<Provider>();
+  // Dev-only (demo tour): picks the bank by id once the number is typed.
+  useEffect(() => {
+    if (!DEMO_HOOKS || !demoBank) return;
+    const t = setTimeout(() => setBank(banks.find((b) => b.id === demoBank)), 900);
+    return () => clearTimeout(t);
+  }, [demoBank]);
   const ready = !!bank && number.length >= MIN_ACCOUNT;
   const key = ready ? `${bank.id}:${number}` : "";
   const [checking, setChecking] = useState("");
@@ -197,11 +217,7 @@ function AccountTransfer({ number, onPick }: { number: string; onPick: (r: Recip
               style={styles.result}
               onPress={() => onPick({ name: lookup.name, channel: "Bank", provider: bank!.name, account: number })}
             >
-              <IconCircle>
-                <AppText variant="captionL" weight="semiBold" style={styles.black}>
-                  {initials(lookup.name)}
-                </AppText>
-              </IconCircle>
+              <PersonAvatar name={lookup.name} provider={bank!.name} />
               <View style={styles.rowText}>
                 <AppText variant="body" weight="semiBold">
                   {lookup.name}

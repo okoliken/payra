@@ -7,6 +7,9 @@ struct PaymentAttributes: ActivityAttributes {
   struct ContentState: Codable, Hashable {
     /// When delivery is expected to finish; the ring fills up to this moment.
     var deliveredAt: Date
+    /// Set by the app once the payment lands, so the widget flips right away instead of
+    /// waiting for the system to notice the stale date.
+    var delivered: Bool = false
   }
 
   var direction: String  // "outgoing" | "incoming"

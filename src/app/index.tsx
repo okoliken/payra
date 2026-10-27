@@ -5,6 +5,8 @@ import { Logo, Screen } from '@/components/ui';
 import { useGuardedRouter } from '@/lib/navigation';
 import { useStore } from '@/store/app-store';
 import { DEV_ROUTE } from '@/dev-route';
+import { DEMO_MODE } from '@/lib/demo';
+import { runDemoTour } from '@/dev-demo';
 
 /** Launch screen: yellow brand background, then route to onboarding / auth / app. */
 export default function LaunchScreen() {
@@ -16,6 +18,10 @@ export default function LaunchScreen() {
   useEffect(() => {
     if (!hydrated) return;
     const timer = setTimeout(() => {
+      if (DEMO_MODE) {
+        useStore.getState().signIn();
+        return runDemoTour(router, DEMO_MODE);
+      }
       if (__DEV__ && DEV_ROUTE) {
         useStore.getState().signIn();
         return router.replace(DEV_ROUTE as never);

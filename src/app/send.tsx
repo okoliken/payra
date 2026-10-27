@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
@@ -20,6 +20,7 @@ import { formatMoney } from "@/lib/format";
 import { EASE, SHAKE, fade, rise } from "@/lib/motion";
 import { recipientDetail, type Recipient } from "@/data/mock";
 import { useStore } from "@/store/app-store";
+import { DEMO_HOOKS, demoBus } from "@/lib/demo";
 
 /**
  * Step 1 of sending: the amount. Continue goes to "Send to" (who); a top-up (`mode=topup`) or a
@@ -68,6 +69,16 @@ export default function SendScreen() {
     if (k !== "del" && !topUp && Number(value) > balance) reject();
     setRaw(value);
   };
+  const onKeyRef = useRef(onKey);
+  useEffect(() => {
+    onKeyRef.current = onKey;
+  });
+
+  // Demo tour: keypad presses arrive over the demo bus, as if tapped.
+  useEffect(() => {
+    if (!DEMO_HOOKS) return;
+    return demoBus.on("key", (k) => onKeyRef.current(k as KeypadKey));
+  }, []);
 
   // "$1,250.5": group the whole part, keep what was typed after the point.
   const [whole, fraction] = raw.split(".");
@@ -115,9 +126,18 @@ export default function SendScreen() {
           ))}
         </Animated.View>
         <Animated.View key={over ? "over" : "ok"} entering={fade()}>
-          <AppText variant="captionL" weight={over ? "semiBold" : "regular"} tone={over ? "danger" : "secondary"} align="center">
-            {over ? `Insufficient balance · You have ${formatMoney(balance)}` : `Your Balance ${formatMoney(balance)}`}
-          </AppText>
+          {over ? (
+            <AppText variant="captionL" weight="semiBold" tone="danger" align="center">
+              {`Insufficient balance · You have ${formatMoney(balance)}`}
+            </AppText>
+          ) : (
+            <AppText variant="captionL" tone="tertiary" align="center">
+              Your Balance{" "}
+              <AppText variant="captionL" weight="semiBold" tone="onBrand">
+                {formatMoney(balance)}
+              </AppText>
+            </AppText>
+          )}
         </Animated.View>
       </View>
 

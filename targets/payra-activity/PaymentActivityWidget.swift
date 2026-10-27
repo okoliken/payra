@@ -4,8 +4,8 @@ import WidgetKit
 
 /// Live Activity for a payment on its way: Dynamic Island (compact, minimal, expanded) and the
 /// lock screen. While it is in flight the ring fills on its own between `startedAt` and
-/// `deliveredAt` (no updates needed); the activity's stale date is `deliveredAt`, so the system
-/// re-renders it then and it switches to the delivered state.
+/// `deliveredAt`; then the app sends `delivered: true` (the stale date at `deliveredAt` is only
+/// a fallback, since the system re-renders stale activities late).
 struct PaymentActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PaymentAttributes.self) { context in
@@ -13,33 +13,30 @@ struct PaymentActivityWidget: Widget {
                 .activityBackgroundTint(Color("brandDark"))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            let done = context.isStale
+            let done = context.state.delivered || context.isStale
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Mark(size: 26).padding(.leading, 4)
+                    Mark(size: 22).padding(.leading, 8).padding(.top, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(signedAmount(context))
-                        .font(.system(size: 17, weight: .semibold))
-                        .monospacedDigit()
-                        .padding(.trailing, 4)
+                    StatusPill(context: context, done: done).padding(.trailing, 8).padding(.top, 6)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(headline(context, done: done))
-                            .font(.system(size: 15, weight: .semibold))
-                        Text(context.attributes.detail)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                        Progress(context: context, done: done)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Summary(context: context, secondary: .secondary)
+                        Bar(context: context, done: done)
                     }
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
+                    .padding(.bottom, 10)
                 }
             } compactLeading: {
                 HStack(spacing: 6) {
                     Mark(size: 18)
                     Text(status(context, done: done))
                         .font(.system(size: 14, weight: .semibold))
+                        .contentTransition(.interpolate)
+                        .animation(.smooth(duration: 0.8), value: done)
                 }
             } compactTrailing: {
                 HStack(spacing: 6) {
@@ -68,12 +65,6 @@ private func signedAmount(_ context: ActivityViewContext<PaymentAttributes>) -> 
     incoming(context) ? "+\(context.attributes.amount)" : context.attributes.amount
 }
 
-private func headline(_ context: ActivityViewContext<PaymentAttributes>, done: Bool) -> String {
-    let who = context.attributes.counterparty
-    if incoming(context) { return done ? "Received from \(who)" : "Incoming from \(who)" }
-    return done ? "Sent to \(who)" : "Sending to \(who)"
-}
-
 /// The Payra mark from the Figma file.
 private struct Mark: View {
     var size: CGFloat
@@ -85,71 +76,127 @@ private struct Mark: View {
     }
 }
 
-/// Circular progress that fills by itself until delivery, then becomes a check.
+/// Circular progress that fills by itself until delivery, then springs into a check.
 private struct Ring: View {
     var context: ActivityViewContext<PaymentAttributes>
     var done: Bool
     var body: some View {
-        if done {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(Color("success"))
-        } else {
-            ProgressView(
-                timerInterval: context.attributes.startedAt...context.state.deliveredAt,
-                countsDown: false,
-                label: { EmptyView() },
-                currentValueLabel: { EmptyView() }
-            )
-            .progressViewStyle(.circular)
-            .tint(Color("brand"))
-            .frame(width: 18, height: 18)
+        ZStack {
+            if done {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color("success"))
+                    .transition(.scale(scale: 0.1).combined(with: .opacity))
+            } else {
+                ProgressView(
+                    timerInterval: context.attributes.startedAt...context.state.deliveredAt,
+                    countsDown: false,
+                    label: { EmptyView() },
+                    currentValueLabel: { EmptyView() }
+                )
+                .progressViewStyle(.circular)
+                .tint(Color("brand"))
+                .transition(.scale(scale: 1.4).combined(with: .opacity))
+            }
+        }
+        .frame(width: 18, height: 18)
+        .animation(.spring(duration: 1.0, bounce: 0.5), value: done)
+    }
+}
+
+/// "Sending" / "Sent" chip; turns green with a check on delivery.
+private struct StatusPill: View {
+    var context: ActivityViewContext<PaymentAttributes>
+    var done: Bool
+    var body: some View {
+        let tint = done ? Color("success") : Color("brand")
+        HStack(spacing: 4) {
+            if done {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .transition(.scale(scale: 0.1).combined(with: .opacity))
+            }
+            Text(status(context, done: done))
+                .font(.system(size: 13, weight: .semibold))
+                .contentTransition(.interpolate)
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(tint.opacity(0.18), in: Capsule())
+        .animation(.spring(duration: 1.0, bounce: 0.5), value: done)
+    }
+}
+
+/// The amount as the hero, then who it is for, with the account number masked.
+private struct Summary: View {
+    var context: ActivityViewContext<PaymentAttributes>
+    var secondary: Color
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(signedAmount(context))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .monospacedDigit()
+            HStack(spacing: 6) {
+                Text("\(incoming(context) ? "from" : "to") \(context.attributes.counterparty)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+                Text(maskedDetail(context.attributes.detail))
+                    .font(.system(size: 13))
+                    .foregroundStyle(secondary)
+                    .lineLimit(1)
+            }
         }
     }
 }
 
-/// Linear version for the expanded island and the lock screen.
-private struct Progress: View {
+/// Rounded progress bar: fills on its own until delivery, then turns solid green.
+private struct Bar: View {
     var context: ActivityViewContext<PaymentAttributes>
     var done: Bool
     var body: some View {
-        if done {
-            ProgressView(value: 1).tint(Color("success"))
-        } else {
-            ProgressView(
-                timerInterval: context.attributes.startedAt...context.state.deliveredAt,
-                countsDown: false,
-                label: { EmptyView() },
-                currentValueLabel: { EmptyView() }
-            )
-            .tint(Color("brand"))
+        ZStack {
+            if done {
+                Capsule().fill(Color("success")).frame(height: 4).transition(.opacity)
+            } else {
+                ProgressView(
+                    timerInterval: context.attributes.startedAt...context.state.deliveredAt,
+                    countsDown: false,
+                    label: { EmptyView() },
+                    currentValueLabel: { EmptyView() }
+                )
+                .progressViewStyle(.linear)
+                .tint(Color("brand"))
+                .transition(.opacity)
+            }
         }
+        .clipShape(Capsule())
+        .animation(.easeInOut(duration: 0.9), value: done)
     }
+}
+
+/// "BRI · 3301298877665" → "BRI ···· 7665": enough to recognise, not the whole number.
+private func maskedDetail(_ detail: String) -> String {
+    let parts = detail.components(separatedBy: " · ")
+    guard parts.count == 2, parts[1].count > 4, parts[1].allSatisfy(\.isNumber) else { return detail }
+    return "\(parts[0]) ···· \(parts[1].suffix(4))"
 }
 
 private struct LockScreenView: View {
     var context: ActivityViewContext<PaymentAttributes>
     var body: some View {
-        let done = context.isStale
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Mark(size: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(headline(context, done: done))
-                        .font(.system(size: 15, weight: .semibold))
-                    Text(context.attributes.detail)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
+        let done = context.state.delivered || context.isStale
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Mark(size: 22)
                 Spacer()
-                Text(signedAmount(context))
-                    .font(.system(size: 17, weight: .semibold))
-                    .monospacedDigit()
+                StatusPill(context: context, done: done)
             }
-            Progress(context: context, done: done)
+            Summary(context: context, secondary: .white.opacity(0.6))
+            Bar(context: context, done: done)
         }
         .foregroundStyle(.white)
-        .padding(16)
+        .padding(18)
     }
 }
 

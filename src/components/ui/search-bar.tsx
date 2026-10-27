@@ -24,10 +24,14 @@ export function SearchBar({ value, onChangeText, style, ...rest }: Props) {
       <TextInput
         ref={input}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(t) => onChangeText(t.replace(/[\r\n]+/g, ' '))}
         placeholderTextColor={theme.colors.textSecondary}
         returnKeyType="search"
         autoCorrect={false}
+        maxFontSizeMultiplier={1.35}
+        multiline
+        scrollEnabled={false}
+        submitBehavior="blurAndSubmit"
         accessibilityRole="search"
         {...rest}
         style={[styles.input, style]}
@@ -64,15 +68,21 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.stroke.soft,
   },
-  // Fills the bar's height so nothing clips (a shorter box clips the text once focused), and the
-  // bottom padding lifts it: iOS centres Plus Jakarta Sans by its metrics, which sits it ~2pt low.
+  // A multiline (UITextView) box with scrolling off, filling the bar. A text view lays its text
+  // out from the top by these insets, whereas the single-line UITextField re-centres by whichever
+  // font metrics UIKit picks and has been seen drifting the text to the bottom of the bar after
+  // interaction. Plus Jakarta Sans at 14pt is 17.6pt tall by its hhea metrics (ascent 14.5,
+  // descent 3.1), so a 20pt line with 14pt above and below sits the caps on the bar's centre,
+  // and the full 48pt box means nothing can clip. Pasted newlines are flattened in onChangeText.
   input: {
     flex: 1,
     alignSelf: 'stretch',
-    paddingTop: 0,
-    paddingBottom: 4,
+    paddingTop: 14,
+    paddingBottom: 14,
+    paddingHorizontal: 0,
     fontFamily: theme.fonts.regular,
     fontSize: theme.typography.body.fontSize,
+    lineHeight: 20,
     color: theme.colors.text,
   },
   clear: {

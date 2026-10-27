@@ -19,6 +19,7 @@ import * as Haptics from "expo-haptics";
 import { AppText, IconCircle, Logo, Screen } from "@/components/ui";
 import { AppIcon, type IconName } from "@/components/app-icon";
 import { TransactionRow } from "@/components/transaction-row";
+import { Tappable } from "@/components/tappable";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoney, formatMoneyWorklet } from "@/lib/format";
 import { useStore } from "@/store/app-store";
@@ -188,9 +189,16 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.gutter}>
-        <AppText variant="bodyL" weight="semiBold" style={[styles.sectionTitle, styles.recentTitle]}>
-          Recent Transaction
-        </AppText>
+        <View style={[styles.sectionTitle, styles.recentTitle, styles.sectionHead]}>
+          <AppText variant="bodyL" weight="semiBold" style={styles.black}>
+            Recent Transaction
+          </AppText>
+          <Tappable hitSlop={8} accessibilityLabel="View all transactions" onPress={() => router.push("/(tabs)/history")}>
+            <AppText variant="captionL" weight="semiBold" tone="onBrand">
+              View all
+            </AppText>
+          </Tappable>
+        </View>
         <View style={styles.recent}>
           {shownTransactions.slice(0, 3).map((tx) => (
             <Animated.View
@@ -401,11 +409,12 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surfaceRaised,
   },
   payment: { flex: 1, alignItems: "center", gap: 8 },
-  black: { color: theme.palette.black },
   banners: { marginTop: 24, flexGrow: 0 },
   bannerList: { paddingHorizontal: theme.spacing.gutter, gap: BANNER_GAP },
   dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 9.5 },
   dot: { height: 8, borderRadius: 100 },
   recentTitle: { marginTop: 25.5 },
+  sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  black: { color: theme.palette.black },
   recent: { gap: 16 },
 }));

@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Pressable, Share, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { useAnimatedProps, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import * as Haptics from "expo-haptics";
-import { AppText, Button, Header, Screen } from "@/components/ui";
-import { AppIcon } from "@/components/app-icon";
+import { AppText, Button, Header, IconCircle, Screen } from "@/components/ui";
+import { AppIcon, type IconName } from "@/components/app-icon";
 import { SuccessMark } from "@/components/brand-marks";
+import { PersonAvatar } from "@/components/person-avatar";
+import { ReceiptSheet } from "@/components/receipt-sheet";
+import { DEMO_HOOKS } from "@/lib/demo";
 import { useGuardedRouter } from "@/lib/navigation";
 import { formatMoneyWorklet } from "@/lib/format";
 import { EASE, fade, rise } from "@/lib/motion";
@@ -30,6 +33,19 @@ const methodFor = (tx: Transaction) =>
 
 const reference = (tx: Transaction) => `PYR${tx.id.replace(/\D/g, "").slice(-10).padStart(10, "0")}`;
 
+const iconFor: Record<Transaction["kind"], IconName> = {
+  received: "arrow-left-down",
+  topup: "arrow-left-down",
+  sent: "arrow-right-up",
+  subscription: "card",
+  bill: "card",
+};
+
+/** Bank name from a detail like "BCA · 0912345678"; undefined for Payra users and wallets. */
+const providerOf = (tx: Transaction) => (tx.method === "Bank" ? tx.detail?.split(" · ")[0] : undefined);
+
+const STATUS_TONE = { Completed: "success", Pending: "warning", Failed: "danger" } as const;
+
 /**
  * Not in Figma: the receipt for a transaction, built from the design system (B1 card, IconCircle
  * rhythm, Body / Caption type). On open our SuccessMark draws its check, the amount counts up and
@@ -38,8 +54,15 @@ const reference = (tx: Transaction) => `PYR${tx.id.replace(/\D/g, "").slice(-10)
 export default function TransactionDetailsScreen() {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, receipt: receiptParam } = useLocalSearchParams<{ id: string; receipt?: string }>();
   const tx = useStore((s) => s.transactions.find((t) => t.id === id));
+  const [receipt, setReceipt] = useState(false);
+  // Dev-only (demo tour): `receipt=1` opens the receipt sheet once the rows have animated in.
+  useEffect(() => {
+    if (!DEMO_HOOKS || receiptParam !== "1") return;
+    const t = setTimeout(() => setReceipt(true), 2600);
+    return () => clearTimeout(t);
+  }, [receiptParam]);
 
   const counted = useSharedValue(0);
   useEffect(() => {
@@ -72,11 +95,13 @@ export default function TransactionDetailsScreen() {
     { label: "Total", value: amount },
   ];
   const canRepeat = tx.kind === "sent" && !!tx.detail;
-
-  const share = () =>
-    Share.share({
-      message: [`Payra receipt · ${tx.status}`, `${tx.title}: ${amount}`, ...rows.map((r) => `${r.label}: ${r.value}`), when].join("\n"),
-    }).catch(() => {});
+  const provider = providerOf(tx);
+  const person = !!tx.detail && (tx.kind === "sent" || tx.kind === "received");
+  const details = [
+    { label: "Method", value: methodFor(tx) },
+    { label: "Reference", value: reference(tx), copy: true },
+  ];
+  const totals = rows.filter((r) => ["Amount", "Fee", "Total"].includes(r.label));
 
   // Detail is "BCA · 0912345678" for banks and "Payra · +62 …" for Payra users.
   const sendAgain = () => {
@@ -98,23 +123,49 @@ export default function TransactionDetailsScreen() {
         <View style={styles.top}>
           <SuccessMark width={72} />
           <Animated.View entering={fade(100)} style={styles.center}>
-            <AppText variant="body" tone="secondary" align="center">
-              {tx.title} {tx.status === "Completed" ? "Successful" : tx.status}
-            </AppText>
+            <View style={[styles.status, styles[`status${tx.status}`]]}>
+              <AppText variant="captionS" weight="semiBold" tone={STATUS_TONE[tx.status]}>
+                {tx.title} {tx.status === "Completed" ? "Successful" : tx.status}
+              </AppText>
+            </View>
             <View style={styles.amountRow}>
-              <AppText variant="h2" weight="bold" tone={incoming ? "success" : "primary"}>
+              <AppText variant="h2" weight="bold" tone={incoming ? "success" : "danger"}>
                 {incoming ? "+" : "-"}
               </AppText>
               <AnimatedInput
                 editable={false}
                 pointerEvents="none"
                 animatedProps={amountProps}
-                style={[styles.amount, incoming && { color: theme.colors.success }]}
+                style={[styles.amount, { color: incoming ? theme.colors.success : theme.colors.danger }]}
               />
             </View>
             <AppText variant="captionL" tone="tertiary" align="center">
               {when}
             </AppText>
+          </Animated.View>
+
+          {/* Who: logo or initials, name, account */}
+          <Animated.View entering={rise(180)} style={styles.party}>
+            {person ? (
+              <PersonAvatar name={tx.category} provider={provider} />
+            ) : (
+              <IconCircle>
+                <AppIcon name={iconFor[tx.kind]} size={22} color={theme.colors.text} />
+              </IconCircle>
+            )}
+            <View style={styles.partyText}>
+              <AppText variant="captionS" tone="tertiary">
+                {incoming ? "From" : "To"}
+              </AppText>
+              <AppText variant="body" weight="semiBold" numberOfLines={1}>
+                {tx.category}
+              </AppText>
+            </View>
+            {tx.detail && tx.method !== "My Wallet" ? (
+              <AppText variant="captionL" tone="secondary" numberOfLines={1} style={styles.partyDetail}>
+                {tx.detail}
+              </AppText>
+            ) : null}
           </Animated.View>
         </View>
 
@@ -130,36 +181,45 @@ export default function TransactionDetailsScreen() {
         </View>
 
         <View style={styles.rows}>
-          {rows.map((r, i) => (
-            <Animated.View
-              key={r.label}
-              entering={rise(200 + i * 35)}
-              style={[styles.row, r.label === "Total" && styles.totalRow]}
-            >
+          {details.map((r, i) => (
+            <Animated.View key={r.label} entering={rise(240 + i * 35)} style={styles.row}>
               <AppText variant="body" tone="secondary">
                 {r.label}
               </AppText>
               <View style={styles.value}>
-                <AppText
-                  variant="body"
-                  weight="semiBold"
-                  tone={r.good ? "success" : "primary"}
-                  numberOfLines={1}
-                  style={styles.valueText}
-                >
+                <AppText variant="body" weight="semiBold" numberOfLines={1} style={styles.valueText}>
                   {r.value}
                 </AppText>
                 {r.copy ? <CopyPill text={r.value} /> : null}
               </View>
             </Animated.View>
           ))}
+
+          <Animated.View entering={rise(240 + details.length * 35)} style={styles.totals}>
+            {totals.map((r) => (
+              <View key={r.label} style={[styles.row, r.label === "Total" && styles.totalRow]}>
+                <AppText variant={r.label === "Total" ? "body" : "captionL"} tone="secondary" weight={r.label === "Total" ? "semiBold" : "regular"}>
+                  {r.label}
+                </AppText>
+                <AppText
+                  variant={r.label === "Total" ? "bodyL" : "body"}
+                  weight="semiBold"
+                  tone={r.good ? "success" : "primary"}
+                >
+                  {r.value}
+                </AppText>
+              </View>
+            ))}
+          </Animated.View>
         </View>
       </View>
 
       <Animated.View entering={rise(480)} style={styles.actions}>
-        <Button title="Share Receipt" variant="outline" style={styles.flex} onPress={share} />
+        <Button title="Share Receipt" variant="outline" style={styles.flex} onPress={() => setReceipt(true)} />
         {canRepeat ? <Button title="Send Again" style={styles.flex} onPress={sendAgain} /> : null}
       </Animated.View>
+
+      <ReceiptSheet visible={receipt} onClose={() => setReceipt(false)} tx={tx} rows={rows} amount={amount} when={when} />
     </Screen>
   );
 }
@@ -199,7 +259,24 @@ function CopyPill({ text }: { text: string }) {
 const styles = StyleSheet.create((theme) => ({
   ticket: { borderRadius: 24, backgroundColor: theme.colors.surfaceRaised, overflow: "hidden" },
   top: { alignItems: "center", gap: 16, paddingTop: 28, paddingBottom: 20, paddingHorizontal: 18 },
-  center: { alignItems: "center", gap: 6 },
+  center: { alignItems: "center", gap: 8 },
+  status: { height: 24, paddingHorizontal: 10, borderRadius: 12, justifyContent: "center" },
+  statusCompleted: { backgroundColor: theme.colors.successSoft },
+  statusPending: { backgroundColor: theme.colors.warningSoft },
+  statusFailed: { backgroundColor: theme.colors.dangerSoft },
+  party: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 4,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background,
+  },
+  partyText: { flex: 1, gap: 2 },
+  partyDetail: { flexShrink: 1, maxWidth: "45%" },
+  totals: { gap: 12, padding: 14, borderRadius: 16, backgroundColor: theme.colors.background },
   amountRow: { flexDirection: "row", alignItems: "center" },
   amount: { padding: 0, color: theme.colors.text, fontFamily: theme.fonts.bold, ...theme.typography.h2 },
   tear: { height: 24, justifyContent: "center" },
@@ -210,7 +287,7 @@ const styles = StyleSheet.create((theme) => ({
   dash: { width: 6, height: 1.5, borderRadius: 1, backgroundColor: theme.colors.stroke.strong },
   rows: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 18, gap: 16 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
-  totalRow: { paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.colors.stroke.soft },
+  totalRow: { paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.colors.stroke.soft },
   value: { flexShrink: 1, flexDirection: "row", alignItems: "center", gap: 8 },
   valueText: { flexShrink: 1 },
   copy: { height: 24, paddingHorizontal: 10, borderRadius: 12, justifyContent: "center", backgroundColor: theme.colors.brand },
