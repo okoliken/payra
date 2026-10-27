@@ -44,11 +44,6 @@ export function ReviewSheet({
   const money = formatMoney(amount);
   const topUp = !recipient;
 
-  const close = () => {
-    onClose();
-    setTimeout(() => setStep("review"), 300);
-  };
-
   const confirm = useCallback(() => {
     if (topUp) {
       const tx = addTransaction({
@@ -82,7 +77,7 @@ export function ReviewSheet({
   }, [topUp, amount, money, recipient, addTransaction, router]);
 
   return (
-    <Sheet visible={visible} onClose={close}>
+    <Sheet visible={visible} onClose={onClose} onClosed={() => setStep("review")}>
       {step === "review" ? (
         <Animated.View key="review" entering={fade()} style={styles.step}>
           <AppText variant="h5" weight="semiBold" align="center">
