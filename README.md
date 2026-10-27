@@ -13,6 +13,14 @@ A portfolio demo of the **Payra e-wallet** Figma design, built with Expo and sty
 
 ## Run it
 
+Shared components (Button, Sheet, Keypad, PinPad, SearchBar, PrivacyShield, Text, motion) come
+from [@okoli/ui](https://github.com/okoliken/okoli-ui), linked from a sibling folder. Clone it next
+to this repo first:
+
+```bash
+git clone https://github.com/okoliken/okoli-ui ../okoli-ui && (cd ../okoli-ui && npm install)
+```
+
 Unistyles ships native code, so **Expo Go won't work** — build a dev client once:
 
 ```bash
