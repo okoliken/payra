@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import Animated from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
@@ -44,7 +44,7 @@ export function ReviewSheet({
   const money = formatMoney(amount);
   const topUp = !recipient;
 
-  const confirm = useCallback(() => {
+  const confirm = () => {
     if (topUp) {
       const tx = addTransaction({
         title: "Wallet Top-up",
@@ -74,7 +74,7 @@ export function ReviewSheet({
       });
       router.replace({ pathname: "/success", params: { id: tx.id, kind: "transfer", title: "Transfer Successful!", body: `You sent ${money} to ${recipient.name}` } });
     }
-  }, [topUp, amount, money, recipient, addTransaction, router]);
+  };
 
   return (
     <Sheet visible={visible} onClose={onClose} onClosed={() => setStep("review")}>

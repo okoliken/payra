@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
 
 /** Minimum gap between two forward navigations. Anything faster is a double tap, not intent. */
@@ -14,18 +14,16 @@ export function useGuardedRouter() {
   const router = useRouter();
   const lastAt = useRef(0);
 
-  return useMemo(() => {
-    const guard = (fn: () => void) => {
-      const now = Date.now();
-      if (now - lastAt.current < LOCK_MS) return;
-      lastAt.current = now;
-      fn();
-    };
-    return {
-      ...router,
-      push: (href: Href) => guard(() => router.push(href, { dangerouslySingular: true })),
-      navigate: (href: Href) => guard(() => router.navigate(href)),
-      replace: (href: Href) => guard(() => router.replace(href)),
-    };
-  }, [router]);
+  const guard = (fn: () => void) => {
+    const now = Date.now();
+    if (now - lastAt.current < LOCK_MS) return;
+    lastAt.current = now;
+    fn();
+  };
+  return {
+    ...router,
+    push: (href: Href) => guard(() => router.push(href, { dangerouslySingular: true })),
+    navigate: (href: Href) => guard(() => router.navigate(href)),
+    replace: (href: Href) => guard(() => router.replace(href)),
+  };
 }

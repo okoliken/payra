@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated, { FadeOut } from "react-native-reanimated";
 import { StyleSheet } from "react-native-unistyles";
@@ -24,7 +24,7 @@ export default function UnlockScreen() {
   const { user, signOut } = useStore();
   const [loading, setLoading] = useState(false);
 
-  const onComplete = useCallback(() => setLoading(true), []);
+  const onComplete = () => setLoading(true);
 
   useEffect(() => {
     if (!loading) return;

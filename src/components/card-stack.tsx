@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -31,12 +31,10 @@ export function CardStack({ cards }: { cards: Card[] }) {
   const { width } = useWindowDimensions();
   const { demoSwipe } = useLocalSearchParams<{ demoSwipe?: string }>();
   const count = cards.length;
-  const [index, setIndex] = useState(0);
-  // Which card each slot is showing; slot 0 starts in front.
-  const [slotCards, setSlotCards] = useState<[number, number]>([0, 1]);
-  // Refs so a commit fired from a long-lived worklet/timer never reads a stale index.
-  const indexRef = useRef(index);
-  indexRef.current = index;
+  // The front card's index, and which card each slot is showing (slot 0 starts in front). One state
+  // object, updated from the previous value, so a commit fired from a long-lived worklet or timer is never stale.
+  const [stack, setStack] = useState<{ index: number; slotCards: [number, number] }>({ index: 0, slotCards: [0, 1] });
+  const { slotCards } = stack;
   const frontSlot = useSharedValue(0);
   const slots = [useSlot(true), useSlot(false)];
   const slot0 = slots[0]!;
@@ -44,13 +42,11 @@ export function CardStack({ cards }: { cards: Card[] }) {
 
   const commit = (emptiedSlot: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const nextIndex = (indexRef.current + 1) % count;
-    indexRef.current = nextIndex;
-    setIndex(nextIndex);
-    setSlotCards((prev) => {
-      const next: [number, number] = [prev[0], prev[1]];
-      next[emptiedSlot] = (nextIndex + 1) % count; // the card that will peek next
-      return next;
+    setStack((prev) => {
+      const index = (prev.index + 1) % count;
+      const next: [number, number] = [prev.slotCards[0], prev.slotCards[1]];
+      next[emptiedSlot] = (index + 1) % count; // the card that will peek next
+      return { index, slotCards: next };
     });
   };
 
@@ -101,11 +97,11 @@ export function CardStack({ cards }: { cards: Card[] }) {
     .onEnd(() => flyOut(1));
 
   // Dev-only: `payra://wallet?demoSwipe=1` advances the stack on a timer so the motion can be recorded.
+  const demoFly = useEffectEvent(() => runOnUI(flyOut)(1));
   useEffect(() => {
     if (!DEMO_HOOKS || !demoSwipe || count < 2) return;
-    const t = setInterval(() => runOnUI(flyOut)(1), 1500);
+    const t = setInterval(demoFly, 1500);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoSwipe, count]);
 
   const style0 = useAnimatedStyle(() => ({

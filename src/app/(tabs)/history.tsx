@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { AppText, Header, Screen, SearchBar, Segmented } from '@/components/ui';
@@ -22,20 +22,18 @@ export default function HistoryScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
 
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const visible = transactions.filter((tx) => {
-      if (filter === 'received' && tx.amount <= 0) return false;
-      if (filter === 'send' && tx.amount >= 0) return false;
-      return !q || tx.title.toLowerCase().includes(q) || tx.category.toLowerCase().includes(q);
-    });
-    const map = new Map<string, Transaction[]>();
-    for (const tx of visible) {
-      const key = dayLabel(tx.at);
-      map.set(key, [...(map.get(key) ?? []), tx]);
-    }
-    return [...map.entries()];
-  }, [transactions, filter, query]);
+  const q = query.trim().toLowerCase();
+  const visible = transactions.filter((tx) => {
+    if (filter === 'received' && tx.amount <= 0) return false;
+    if (filter === 'send' && tx.amount >= 0) return false;
+    return !q || tx.title.toLowerCase().includes(q) || tx.category.toLowerCase().includes(q);
+  });
+  const byDay = new Map<string, Transaction[]>();
+  for (const tx of visible) {
+    const key = dayLabel(tx.at);
+    byDay.set(key, [...(byDay.get(key) ?? []), tx]);
+  }
+  const groups = [...byDay.entries()];
 
   return (
     <Screen scroll tabBarInset>

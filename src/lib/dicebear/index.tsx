@@ -15,7 +15,6 @@
  * Rendering is deterministic per seed + options and memoised in a small LRU so lists of
  * avatars stay cheap to scroll.
  */
-import { useMemo } from "react";
 import { SvgXml, type SvgProps } from "react-native-svg";
 import { Avatar, Style, type StyleOptions } from "@dicebear/core";
 
@@ -88,20 +87,13 @@ export const avatarUri = (seed: string, options?: AvatarOptions, style?: AvatarS
   `data:image/svg+xml;utf8,${encodeURIComponent(avatarSvg(seed, options, style))}`;
 
 /**
- * Hook: the avatar for a seed, memoised across renders.
+ * Hook: the avatar for a seed. The React Compiler caches it across renders, and caches the
+ * caller's `options` literal too, so it only rebuilds when the seed, options or style change.
  * Pass `style` to use something other than the configured default.
  */
 export function useDiceBearAvatar(seed: string, options: AvatarOptions = {}, style?: AvatarStyle) {
-  const optionsKey = JSON.stringify(options, Object.keys(options).sort());
-  return useMemo(
-    () => {
-      const svg = avatarSvg(seed, options, style);
-      return { svg, uri: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` };
-    },
-    // `optionsKey` stands in for `options`, so a fresh object literal each render does not re-render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [seed, optionsKey, style],
-  );
+  const svg = avatarSvg(seed, options, style);
+  return { svg, uri: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` };
 }
 
 export type DiceBearAvatarProps = Omit<SvgProps, "width" | "height"> & {

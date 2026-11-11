@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { Easing, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
@@ -64,19 +64,13 @@ export default function SendToScreen() {
   const q = query.trim().toLowerCase();
 
   // Most recent people you sent to, newest first, then fill up from saved beneficiaries.
-  const recent = useMemo(() => {
-    const names = transactions.filter((t) => t.kind === "sent").map((t) => t.category);
-    const ordered = [...new Set(names)].map((n) => beneficiaries.find((b) => b.name === n)).filter((b): b is Recipient => !!b);
-    return [...new Set([...ordered, ...beneficiaries])].slice(0, 6);
-  }, [transactions]);
+  const sentTo = [...new Set(transactions.filter((t) => t.kind === "sent").map((t) => t.category))];
+  const ordered = sentTo.map((n) => beneficiaries.find((b) => b.name === n)).filter((b): b is Recipient => !!b);
+  const recent = [...new Set([...ordered, ...beneficiaries])].slice(0, 6);
 
-  const matches = useMemo(
-    () =>
-      !q
-        ? beneficiaries
-        : beneficiaries.filter((b) => b.name.toLowerCase().includes(q) || b.account.replace(/\D/g, "").includes(digits)),
-    [q, digits],
-  );
+  const matches = !q
+    ? beneficiaries
+    : beneficiaries.filter((b) => b.name.toLowerCase().includes(q) || b.account.replace(/\D/g, "").includes(digits));
 
   return (
     // The list scrolls under the home indicator; its own bottom padding keeps the last row clear.
