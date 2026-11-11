@@ -1,21 +1,23 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { AppText, Screen, SearchBar, Segmented } from '@/components/ui';
+import { AppText, Header, Screen, SearchBar, Segmented } from '@/components/ui';
 import { TransactionRow } from '@/components/transaction-row';
 import { EmptyState } from '@/components/brand-marks';
 import type { Transaction } from '@/data/mock';
 import { dayLabel } from '@/lib/format';
 import { useStore } from '@/store/app-store';
+import { useGuardedRouter } from '@/lib/navigation';
 
 type Filter = 'all' | 'received' | 'send';
 
 /**
  * Figma "History" (402×874): nav 64 (back + "History") → 24 → title block (gap 8) → 24 →
- * search bar + segmented control (gap 16) → day groups: Body SemiBold date header, then cards,
- * everything at gap 16. Amounts are unsigned, green for money in and red for money out.
+ * 18 → search bar + segmented control (gap 16) → 18 → day groups 18 apart: Body SemiBold date
+ * header, 18, then cards at gap 16. Amounts are unsigned, green for money in and red for money out.
  */
 export default function HistoryScreen() {
+  const router = useGuardedRouter();
   const { transactions } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -37,6 +39,7 @@ export default function HistoryScreen() {
 
   return (
     <Screen scroll tabBarInset>
+      <Header title="History" onBack={() => router.navigate('/(tabs)')} />
       <View style={styles.titleBlock}>
         <AppText variant="h4" weight="semiBold">
           Transactions History
@@ -67,9 +70,11 @@ export default function HistoryScreen() {
             <AppText variant="body" weight="semiBold">
               {day}
             </AppText>
-            {items.map((tx) => (
-              <TransactionRow key={tx.id} tx={tx} />
-            ))}
+            <View style={styles.rows}>
+              {items.map((tx) => (
+                <TransactionRow key={tx.id} tx={tx} />
+              ))}
+            </View>
           </View>
         ))
       )}
@@ -78,7 +83,8 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create((theme) => ({
-  titleBlock: { gap: theme.spacing.sm, marginTop: theme.spacing.lg, marginBottom: theme.spacing.xxl },
-  controls: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
-  group: { gap: theme.spacing.lg, marginBottom: theme.spacing.lg },
+  titleBlock: { gap: theme.spacing.sm, marginBottom: 18 },
+  controls: { gap: theme.spacing.lg, marginBottom: 18 },
+  group: { gap: 18, marginBottom: 18 },
+  rows: { gap: theme.spacing.lg },
 }));

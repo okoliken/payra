@@ -19,7 +19,7 @@ export type HeaderProps = {
 export function Header({ title, center, right, onBack, showBack = true, onDark = false }: HeaderProps) {
   const router = useGuardedRouter();
   const { theme } = useUnistyles();
-  const iconColor = onDark ? theme.colors.onBrandDark : theme.colors.text;
+  const iconColor = onDark ? theme.colors.onBrandDark : theme.colors.brandDark;
 
   return (
     <View style={styles.row}>
@@ -45,8 +45,9 @@ export function Header({ title, center, right, onBack, showBack = true, onDark =
 }
 
 const styles = StyleSheet.create((theme) => ({
-  // Figma "Nav Bar": 64 tall, 48pt buttons, 24 gap to content.
-  row: { flexDirection: 'row', alignItems: 'center', height: 64, marginBottom: theme.spacing.xxl },
+  // Figma "Nav Bar": 64 tall, 48pt buttons, 24 gap to content. Figma's status bar is 66pt,
+  // 4 more than the device inset, so the bar starts 4 lower.
+  row: { flexDirection: 'row', alignItems: 'center', height: 64, marginTop: 4, marginBottom: theme.spacing.xxl },
   slot: { width: 48, justifyContent: 'center' },
   right: { alignItems: 'flex-end' },
   title: { flex: 1 },

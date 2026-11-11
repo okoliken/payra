@@ -25,7 +25,7 @@ const TIMING = { duration: 260, easing: Easing.bezier(0.2, 0.8, 0.2, 1) };
 /**
  * Figma "Segmented Controls": 60 tall, padding 6, gap 6, r28, Brand/Secondary track;
  * the active "Segmented" pill (48 tall, r24, Brand/Primary) slides between segments and each
- * label cross-fades between white and Brand/Secondary as the pill reaches it.
+ * label cross-fades from white Caption 12/17 to Brand/Secondary Body 14/20 as the pill reaches it.
  */
 export function Segmented<T extends string>({
   options,
@@ -120,7 +120,7 @@ function SegmentLabel({
       accessibilityState={{ selected }}
     >
       <Animated.View style={[styles.labelLayer, onDark]}>
-        <AppText variant="body" weight="semiBold" tone="onDark" align="center">
+        <AppText variant="captionL" weight="semiBold" tone="onDark" align="center">
           {label}
         </AppText>
       </Animated.View>

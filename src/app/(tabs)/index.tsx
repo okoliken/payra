@@ -306,12 +306,13 @@ function Dot({ index, step, scrollX }: { index: number; step: number; scrollX: S
 
 const styles = StyleSheet.create((theme) => ({
   gutter: { paddingHorizontal: theme.spacing.gutter },
-  // Figma: top bar 58 tall (8 padding), 24 above the balance card.
+  // Figma: top bar 58 tall from y66 (4 below the device inset), 24 above the balance card.
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    height: 58,
+    marginTop: 4,
     marginBottom: 24,
   },
   topActions: { flexDirection: "row", alignItems: "center", gap: 14 },
@@ -400,10 +401,12 @@ const styles = StyleSheet.create((theme) => ({
   actionIcon: { width: 40, paddingHorizontal: 0, justifyContent: "center" },
   actionAdd: { backgroundColor: theme.colors.brand, borderWidth: 0 },
   sectionTitle: { marginTop: 24, marginBottom: 16, color: theme.palette.black },
-  // Figma: r24 card, padding 18; four 87.5pt columns centred on the icons.
+  // Figma: r24 card 107.5 tall (its 73pt columns overflow the 18 padding by 0.75 each side);
+  // four 87.5pt columns centred on the icons.
   payments: {
     flexDirection: "row",
-    paddingVertical: 18,
+    alignItems: "center",
+    height: 107.5,
     paddingHorizontal: 10,
     borderRadius: 24,
     backgroundColor: theme.colors.surfaceRaised,

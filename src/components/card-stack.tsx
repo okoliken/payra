@@ -128,10 +128,12 @@ export function CardStack({ cards }: { cards: Card[] }) {
       <View style={styles.stack} accessibilityRole="button" accessibilityHint="Swipe or tap to show the next card">
         <Animated.View style={[styles.slot, style0]}>
           <BankCard card={card0} />
+          <Seam z={slot0.z} />
         </Animated.View>
         {count > 1 ? (
           <Animated.View style={[styles.slot, style1]}>
             <BankCard card={card1} />
+            <Seam z={slot1.z} />
           </Animated.View>
         ) : null}
       </View>
@@ -139,7 +141,28 @@ export function CardStack({ cards }: { cards: Card[] }) {
   );
 }
 
-const styles = StyleSheet.create({
+/**
+ * Figma "Rectangle 411": a 6pt Background/B0 stroke along the front card's top edge (a 370-wide
+ * r24 outline), which cuts a gap between it and the card peeking out behind. Front slot only.
+ */
+function Seam({ z }: { z: SharedValue<number> }) {
+  const style = useAnimatedStyle(() => ({ opacity: z.value }));
+  return <Animated.View pointerEvents="none" style={[styles.seam, style]} />;
+}
+
+const styles = StyleSheet.create((theme) => ({
   stack: { height: CARD_HEIGHT + PEEK },
   slot: { position: 'absolute', left: 0, right: 0, top: 0 },
-});
+  seam: {
+    position: 'absolute',
+    top: -3,
+    left: -3,
+    right: -3,
+    height: 28.56,
+    borderWidth: 6,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 27,
+    borderTopRightRadius: 27,
+    borderColor: theme.colors.background,
+  },
+}));

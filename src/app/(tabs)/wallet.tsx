@@ -9,7 +9,7 @@ import { useStore } from "@/store/app-store";
 /**
  * Figma "My Wallet" (402×874): nav 64 (title + 48pt `add` icon button) → 24 → card stack
  * (Mastercard strip 62pt above the Visa card, both 363.33×200 r24) → 32 → "Manage Wallet"
- * Body Large SemiBold → 16 → rows 370×84 (padding 18, gap 12, r18, B1) at gap 16, each with a
+ * Body Large SemiBold → 18 → rows 370×84 (padding 18, gap 12, r18, B1) at gap 16, each with a
  * 48pt IconCircle, Body SemiBold label and `alt-arrow-right` chevron.
  */
 const rows: { key: string; label: string; icon: IconName }[] = [
@@ -78,7 +78,7 @@ export default function WalletScreen() {
 const styles = StyleSheet.create((theme) => ({
   sectionTitle: {
     marginTop: theme.spacing.xxxl,
-    marginBottom: theme.spacing.lg,
+    marginBottom: 18,
   },
   list: { gap: theme.spacing.lg },
   row: {

@@ -7,8 +7,8 @@ import { formatMoney } from "@/lib/format";
 
 /**
  * Figma card tile (My Wallet): 363.33×200, r24, Brand/Secondary (Visa) or Brand/Primary (Mastercard).
- * Measured positions inside the card: brand mark top-left at (26.67, 20); type label Caption 12/17
- * right-aligned with a 28.9 right inset at y=20; number row at y≈87 — three groups of four 6.67pt
+ * Measured positions inside the card: type label Caption 12/17 right-aligned with a 28.9 right
+ * inset, centred 30 from the top; brand mark at x 26.67, Visa centred at 30.6 and Mastercard at 32.8; number row centred at y≈99 — three groups of four 6.67pt
  * dots (gap 7) and the last four digits in Heading H4 Regular 20/28; bottom row at y≈157 —
  * balance Body Large SemiBold left, expiry Body SemiBold right. `compact` renders only the top strip.
  */
@@ -75,11 +75,11 @@ const visaSvg = `<svg width="41" height="28" viewBox="0 0 41 28" fill="none"><pa
 const mastercardSvg = `<svg width="41" height="28" viewBox="0 0 41 28" fill="none"><path d="M27.5225 2.89453C33.4636 2.89474 38.2793 7.76722 38.2793 13.7773C38.2791 19.7873 33.4635 24.659 27.5225 24.6592C24.8587 24.6592 22.4228 23.6779 20.5439 22.0557C18.6652 23.6777 16.23 24.6591 13.5664 24.6592C7.62522 24.6592 2.80875 19.7875 2.80859 13.7773C2.80859 7.76709 7.62512 2.89453 13.5664 2.89453C16.2299 2.89457 18.6652 3.87609 20.5439 5.49805C22.4227 3.87593 24.8588 2.89453 27.5225 2.89453Z" fill="#ED0006"/><path d="M27.5215 2.89453C33.4628 2.89453 38.2793 7.76709 38.2793 13.7773C38.2791 19.7875 33.4627 24.6592 27.5215 24.6592C24.858 24.6591 22.4226 23.6777 20.5439 22.0557C22.8557 20.0597 24.3232 17.0929 24.3232 13.7773C24.3232 10.4616 22.8559 7.49409 20.5439 5.49805C22.4226 3.87607 24.8581 2.89463 27.5215 2.89453Z" fill="#F9A000"/><path d="M20.5439 5.49805C22.8561 7.49409 24.3242 10.4614 24.3242 13.7773C24.3242 17.093 22.8558 20.0596 20.5439 22.0557C18.2323 20.0596 16.7646 17.0928 16.7646 13.7773C16.7646 10.4616 18.2321 7.49409 20.5439 5.49805Z" fill="#FF5E00"/></svg>`;
 
 function VisaMark({ onDark }: { onDark: boolean }) {
-  return <SvgXml xml={visaSvg} width={41} height={28} color={onDark ? "#FFFFFF" : "#0B4647"} />;
+  return <SvgXml xml={visaSvg} width={41} height={28} color={onDark ? "#FFFFFF" : "#0B4647"} style={{ transform: [{ translateY: 0.6 }] }} />;
 }
 
 function MastercardMark() {
-  return <SvgXml xml={mastercardSvg} width={41} height={28} />;
+  return <SvgXml xml={mastercardSvg} width={41} height={28} style={{ transform: [{ translateY: 2.8 }] }} />;
 }
 
 const styles = StyleSheet.create((theme) => ({
@@ -87,7 +87,7 @@ const styles = StyleSheet.create((theme) => ({
     alignSelf: "stretch",
     marginHorizontal: 3.33,
     borderRadius: 24,
-    paddingTop: 20,
+    paddingTop: 16,
     paddingLeft: 26.67,
     paddingRight: 28.9,
     variants: {
@@ -115,7 +115,7 @@ const styles = StyleSheet.create((theme) => ({
   number: {
     position: "absolute",
     left: 36.67,
-    top: 86.67,
+    top: 85,
     flexDirection: "row",
     alignItems: "center",
     gap: 20,
